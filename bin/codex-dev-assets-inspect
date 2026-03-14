@@ -60,4 +60,14 @@ printf '\n## repo_workspaces\n'
 find "$REPO_DIR/.openclaw/workspaces" -mindepth 1 -maxdepth 2 -type f \( -name '*.md' -o -name '*.json' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | LC_ALL=C sort | sed "s|^$REPO_DIR/||" || true
 
 printf '\n## runtime_workspaces\n'
-find "$OPENCLAW_HOME" -maxdepth 2 -path "$OPENCLAW_HOME/workspace-*" -type f \( -name '*.md' -o -name '*.json' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | LC_ALL=C sort || true
+while IFS= read -r entry; do
+  [ -e "$entry" ] || continue
+  if [ -L "$entry" ]; then
+    printf '%s -> %s\n' "$entry" "$(readlink -f "$entry")"
+  else
+    printf '%s\n' "$entry"
+  fi
+done < <(
+  find "$OPENCLAW_HOME" -maxdepth 2 -path "$OPENCLAW_HOME/workspace-*" \( -type f -o -type l \) \
+    \( -name '*.md' -o -name '*.json' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | LC_ALL=C sort
+) || true
