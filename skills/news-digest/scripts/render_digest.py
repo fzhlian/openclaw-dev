@@ -68,6 +68,11 @@ TIME_RANGE_ALIASES = {
     "近7天": "最近 7 天",
     "近14天": "最近 14 天",
     "近30天": "最近 30 天",
+    "过去24小时": "最近 24 小时",
+    "过去1天": "最近 1 天",
+    "过去7天": "最近 7 天",
+    "过去14天": "最近 14 天",
+    "过去30天": "最近 30 天",
 }
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
