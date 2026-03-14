@@ -70,6 +70,7 @@
 - `results`：保留为空列表，表示不输出正常 `文章清单`
 - `forceDegraded`：显式要求走降级渲染
 - `discoveredResults`：可选；用于承载“已发现结果”
+- `findings`：可选；与 `discoveredResults` 等价，可作为兼容别名
 - `discoveredResults[*].topic/title/site`：三者取其一作为条目标识
 - `discoveredResults[*].summary/note/detail`：三者取其一作为条目说明
 - 若没有 `discoveredResults`，降级输出中的 `## 已发现结果` 会回落为“暂未拿到满足约束的可输出结果”
