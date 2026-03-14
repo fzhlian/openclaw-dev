@@ -96,6 +96,7 @@ SITE_ALIASES = {
     "華爾街見聞": "wallstreetcn.com",
 }
 KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
+PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -160,7 +161,7 @@ def ask_list(params: dict[str, Any]) -> list[str]:
 
 
 def normalize_frequency(value: str) -> str:
-    text = value.strip()
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
     if not text:
         return ""
     compact = "".join(text.split())
@@ -168,7 +169,7 @@ def normalize_frequency(value: str) -> str:
 
 
 def normalize_output_mode(value: str) -> str:
-    text = value.strip()
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
     if not text:
         return ""
     compact = "".join(text.split()).replace("＋", "+")
@@ -180,7 +181,7 @@ def normalize_output_mode(value: str) -> str:
 
 
 def normalize_time_range(value: str) -> str:
-    text = value.strip()
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
     if not text:
         return ""
     compact = "".join(text.split()).lower()

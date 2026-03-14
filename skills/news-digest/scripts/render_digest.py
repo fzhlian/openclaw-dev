@@ -89,10 +89,11 @@ TIME_RANGE_ALIASES = {
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
+PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
 
 
 def normalize_output_mode(value: str) -> str:
-    text = value.strip()
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
     if not text:
         return FLAT_OUTPUT_MODE
     compact = "".join(text.split()).replace("＋", "+")
@@ -104,11 +105,19 @@ def normalize_output_mode(value: str) -> str:
 
 
 def normalize_time_range(value: str) -> str:
-    text = value.strip()
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
     if not text:
         return ""
     compact = "".join(text.split()).lower()
     return TIME_RANGE_ALIASES.get(compact, text)
+
+
+def normalize_frequency(value: str) -> str:
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
+    if not text:
+        return ""
+    compact = "".join(text.split())
+    return FREQUENCY_ALIASES.get(compact, FREQUENCY_ALIASES.get(text, text))
 
 
 def split_csv(value: str) -> list[str]:
@@ -307,8 +316,7 @@ def render_articles(results: list[dict], output_mode: str) -> list[str]:
 
 
 def render_parameters(args: argparse.Namespace) -> list[str]:
-    compact_frequency = "".join(args.frequency.strip().split())
-    frequency = FREQUENCY_ALIASES.get(compact_frequency, FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip()))
+    frequency = normalize_frequency(args.frequency)
     output_mode = normalize_output_mode(args.output_mode)
     time_range = normalize_time_range(args.time_range) or DEFAULT_TIME_RANGE
     keywords = normalize_topics_display(args.keywords)
@@ -437,8 +445,7 @@ def main() -> int:
     if args.overview_limit < 1:
         print("--overview-limit 必须 >= 1", file=sys.stderr)
         return 1
-    compact_frequency = "".join(args.frequency.strip().split())
-    normalized_frequency = FREQUENCY_ALIASES.get(compact_frequency, FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip()))
+    normalized_frequency = normalize_frequency(args.frequency)
     if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
         print("--frequency 当前仅支持 一次性 / 每日 / 每周", file=sys.stderr)
         return 1
@@ -457,6 +464,7 @@ def main() -> int:
     try:
         payload = load_payload(args.input)
         args.output_mode = normalized_output_mode
+        args.frequency = normalized_frequency
         args.language = normalized_language
         print(build_markdown(payload, args))
     except ValueError as exc:

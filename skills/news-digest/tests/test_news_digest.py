@@ -701,6 +701,28 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["关键词"], "OpenAI、Gemini")
 
+    def test_intake_check_strips_trailing_parameter_punctuation(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--time-range",
+            "最近7天。",
+            "--frequency",
+            "执行一次。",
+            "--output-mode",
+            "总览+逐条。",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["时间范围"], "最近 7 天")
+        self.assertEqual(payload["confirm"]["频率"], "一次性")
+        self.assertEqual(payload["confirm"]["输出模式"], "摘要总览 + 逐条清单")
+
     def test_intake_check_deduplicates_keywords_case_insensitively(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -1836,6 +1858,37 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 关键词：OpenAI、Gemini", result.stdout)
         self.assertNotIn("- 关键词：OpenAI。、Gemini！", result.stdout)
+
+    def test_render_digest_strips_trailing_parameter_punctuation(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "One",
+                        "url": "https://openai.com/a",
+                        "snippet": "1",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--time-range",
+            "最近7天。",
+            "--frequency",
+            "执行一次。",
+            "--output-mode",
+            "总览+逐条。",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 时间范围：最近 7 天", result.stdout)
+        self.assertIn("- 频率：一次性", result.stdout)
+        self.assertIn("- 输出模式：摘要总览 + 逐条清单", result.stdout)
 
     def test_render_digest_derives_source_domain_from_trailing_dot_url(self) -> None:
         input_path = self.write_json(
