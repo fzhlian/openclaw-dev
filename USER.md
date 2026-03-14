@@ -16,3 +16,4 @@
 - Continuation preference for explanation threads: if I only reply with “继续”, add only new high-signal facts instead of restating the whole structure
 - Casual-chat preference: if I am only greeting you or chatting briefly, do not treat that as resuming the last task
 - Context-switch preference: in this repo, “切换到 codex 开发” means switching to the `openclaw-dev-codex` development context, not clearing the current workbench
+- Switching preference: project/skill/agent switching should use fuzzy matching over real existing assets; if ambiguous, ask me to choose; if no match, do not pretend the switch succeeded

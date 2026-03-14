@@ -75,6 +75,9 @@
 - 但不要把普通寒暄、表情、称呼讨论误判成“继续开发”或“继续上一个任务”；只有出现明确任务动词或明确目标时，才恢复任务执行链
 - 在本仓库语境里，“切换到 codex 开发 / Codex 开发模式”默认指切换到 `openclaw-dev-codex` 这个仓库开发上下文，而不是清空当前开发位
 - 若用户先说“结束当前开发，切换到 codex 开发”，随后又问“现在开发的是什么”，应回答“当前上下文已切到 `openclaw-dev-codex`，但具体子任务尚未指定”，而不是直接说“当前没有开发项在跑”
+- 若用户要求“切换项目 / 切换 skill / 切换 agent”，先在已知资产集合里做模糊匹配：仓库内 skill、可发布 skill、运行态已安装 skill、运行态 agent、workspace 配置都可作为候选
+- 若模糊匹配唯一命中，则切换到该目标；若命中多个候选，必须把候选列给用户选；若没有命中，必须明确说当前不存在这个项目/skill/agent，不能假定切换成功
+- 不要因为名字“看起来像”就切到一个并不存在的目标；项目切换的成功结论必须基于真实可见资产
 
 ## 推荐阅读顺序
 
@@ -101,6 +104,7 @@
 - 对上述范例，不要改写成 `git status && git diff && find ...` 或 `pwd && ...` 这类多段只读命令链
 - 如果用户问“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”，默认先使用 `codex-dev-assets-inspect`，不要自己拼 `find skills ... && find ~/.openclaw/agents ...`
 - 对这类资产盘点问题，不要只查 `skills/`；必须同时覆盖 `skill/`、`~/.openclaw/skills`、`~/.openclaw/openclaw.json` 的 agent 列表，以及仓库 / 运行态 workspace 配置
+- 若项目切换需要确认候选集合，也优先从 `codex-dev-assets-inspect` 的结果里取 skill / agent / workspace 名称；不要凭记忆猜可切换目标
 - 如果用户要把资产盘点结果整理成仓库内文档，预检查也应先从 `codex-dev-assets-inspect` 开始；只有在需要确认落盘位置时，才补最小目录/文件存在性检查
 - 对“帮我整理一份可放仓库的资产清单文档”这类请求，不要先展开成 `git status && find . && find .openclaw/workspaces ...` 这类多段只读命令链
 - 对“帮我整理成一份可放仓库的资产清单.md”这类请求，按写入型开发请求处理：Telegram 侧必须优先走 `codex-dev-dispatch`，不要在聊天里直接编辑、`git add`、`git commit`
