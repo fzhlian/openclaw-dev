@@ -12,6 +12,7 @@ MAX_LIMIT = 20
 DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 DEFAULT_LANGUAGE = "中文"
+SUPPORTED_LANGUAGE = "中文"
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -121,6 +122,8 @@ def main() -> int:
         raise SystemExit("--limit 必须 >= 1")
     if args.limit > MAX_LIMIT:
         raise SystemExit(f"--limit 必须 <= {MAX_LIMIT}")
+    if (args.language.strip() or DEFAULT_LANGUAGE) != SUPPORTED_LANGUAGE:
+        raise SystemExit(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}")
 
     params = normalize_params(args)
     asks = ask_list(params)

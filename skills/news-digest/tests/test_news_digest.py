@@ -66,6 +66,19 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["confirm"]["频率"], "一次性")
         self.assertEqual(payload["confirm"]["输出语言"], "中文")
 
+    def test_intake_check_rejects_non_chinese_output_language(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--language",
+            "English",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--language 当前仅支持 中文", result.stderr)
+
     def test_filter_results_keeps_same_title_across_domains(self) -> None:
         input_path = self.write_json(
             [
@@ -98,6 +111,22 @@ class NewsDigestScriptTests(unittest.TestCase):
         result = self.run_script("render_digest.py", "--input", input_path)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("缺少 url", result.stderr)
+
+    def test_render_digest_rejects_non_chinese_output_language(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                    }
+                ]
+            }
+        )
+        result = self.run_script("render_digest.py", "--input", input_path, "--language", "English")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--language 当前仅支持 中文", result.stderr)
 
     def test_render_digest_degrades_when_no_results(self) -> None:
         input_path = self.write_json(

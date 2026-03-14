@@ -14,6 +14,7 @@ DEFAULT_NEXT_STEP = "如需更高覆盖，可放宽时间范围、补充来源�
 GROUPED_OUTPUT_MODE = "按主题分组+逐条"
 FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 DEFAULT_LANGUAGE = "中文"
+SUPPORTED_LANGUAGE = "中文"
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 
@@ -234,6 +235,9 @@ def main() -> int:
     args = parse_args()
     if args.overview_limit < 1:
         print("--overview-limit 必须 >= 1", file=sys.stderr)
+        return 1
+    if (args.language.strip() or DEFAULT_LANGUAGE) != SUPPORTED_LANGUAGE:
+        print(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}", file=sys.stderr)
         return 1
 
     try:
