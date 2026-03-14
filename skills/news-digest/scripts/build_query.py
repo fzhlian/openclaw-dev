@@ -72,15 +72,18 @@ def dedupe_keywords(items: list[str]) -> list[str]:
     return deduped
 
 
-def dedupe_casefold(items: list[str]) -> list[str]:
+def dedupe_excludes(items: list[str]) -> list[str]:
     deduped: list[str] = []
     seen: set[str] = set()
     for item in items:
-        marker = item.casefold()
+        normalized = item.strip().strip(KEYWORD_EDGE_PUNCTUATION)
+        if not normalized:
+            continue
+        marker = normalized.casefold()
         if marker in seen:
             continue
         seen.add(marker)
-        deduped.append(item)
+        deduped.append(normalized)
     return deduped
 
 
@@ -239,7 +242,7 @@ def main() -> int:
 
     keywords = split_items(args.keyword)
     sites = split_items(args.site)
-    excludes = dedupe_casefold(split_items(args.exclude))
+    excludes = dedupe_excludes(split_items(args.exclude))
 
     try:
         if args.keyword_file:

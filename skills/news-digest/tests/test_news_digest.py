@@ -221,6 +221,25 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["queries"], ['site:openai.com OpenAI -"ads"'])
 
+    def test_build_query_strips_trailing_exclude_punctuation(self) -> None:
+        result = self.run_script(
+            "build_query.py",
+            "-k",
+            "OpenAI",
+            "-s",
+            "openai.com",
+            "-x",
+            "ads。,tracking！",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(
+            payload["queries"],
+            ['site:openai.com OpenAI -"ads" -"tracking"'],
+        )
+
     def test_intake_check_confirm_includes_frequency_and_default_language(self) -> None:
         result = self.run_script(
             "intake_check.py",
