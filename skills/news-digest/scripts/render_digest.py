@@ -123,6 +123,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
         f"- 关键词：{args.keywords or '（未提供）'}",
         f"- 网站：{args.sites or '（未提供）'}",
         f"- 时间范围：{args.time_range or '（未提供）'}",
+        f"- 频率：{args.frequency or '（未提供）'}",
         f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",
         f"- 输出模式：{args.output_mode or FLAT_OUTPUT_MODE}",
         f"- 输出语言：{args.language or DEFAULT_LANGUAGE}",
@@ -207,6 +208,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--keywords", default="", help="检索关键词，展示在参数区")
     parser.add_argument("--sites", default="", help="目标站点，展示在参数区")
     parser.add_argument("--time-range", default="", help="时间范围，展示在参数区")
+    parser.add_argument("--frequency", default="", help="更新频率，展示在参数区")
     parser.add_argument("--limit", type=int, help="结果数，展示在参数区")
     parser.add_argument("--output-mode", default=FLAT_OUTPUT_MODE, help="输出模式；支持平铺或按主题分组")
     parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，默认中文")

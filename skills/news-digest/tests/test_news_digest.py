@@ -118,6 +118,8 @@ class NewsDigestScriptTests(unittest.TestCase):
             "bbc.com,rfi.fr,dw.com",
             "--time-range",
             "最近 7 天",
+            "--frequency",
+            "一次性",
             "--limit",
             "5",
         )
@@ -125,6 +127,7 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("## 检索参数", result.stdout)
         self.assertIn("## 已发现结果", result.stdout)
         self.assertIn("## 局限与建议", result.stdout)
+        self.assertIn("- 频率：一次性", result.stdout)
         self.assertIn("- 输出语言：中文", result.stdout)
         self.assertIn("BBC：仅确认伊朗相关主题方向，未拿到稳定原文链接", result.stdout)
         self.assertNotIn("## 摘要总览", result.stdout)
@@ -143,9 +146,18 @@ class NewsDigestScriptTests(unittest.TestCase):
                 ]
             }
         )
-        result = self.run_script("render_digest.py", "--input", input_path, "--overview-limit", "1")
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--frequency",
+            "一次性",
+            "--overview-limit",
+            "1",
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("OpenAI policy update（来源：openai.com）：policy summary from search result", result.stdout)
+        self.assertIn("- 频率：一次性", result.stdout)
         self.assertIn("- 输出语言：中文", result.stdout)
 
 

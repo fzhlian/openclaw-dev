@@ -201,6 +201,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 输出包含 `## 摘要总览`、`## 文章清单`、`## 检索参数`、`## 局限与建议`
 - 第一条因缺失 `publishedAt`，应显示“时间未标注”
 - 两条结果都保留原始链接
+- `## 检索参数` 中包含 `频率`
 - `## 检索参数` 中包含 `输出语言`，默认显示 `中文`
 - 输出结构与 `SKILL.md` 中的模板保持一致
 
@@ -246,6 +247,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - `## 文章清单` 下按 `### OpenAI`、`### Gemini` 分组输出
 - 每个分组内仍保留逐条摘要、来源、时间、链接
 - `## 检索参数` 中显示本次 `输出模式`
+- `## 检索参数` 中显示本次 `频率`
 - `## 检索参数` 中仍显示 `输出语言：中文`
 
 ## 验证 6：缺少稳定链接时必须降级
@@ -266,6 +268,7 @@ python3 skills/news-digest/scripts/render_digest.py \
   - `## 已发现结果`
   - `## 局限与建议`
 - 明确说明哪些站点/主题仅确认了方向，哪些结果因为缺少稳定链接被排除
+- 降级输出的 `## 检索参数` 中仍应保留 `频率`
 - 降级输出的 `## 检索参数` 中仍应保留 `输出语言`
 - 如使用 `render_digest.py` 做降级渲染，可传入空 `results` 加 `discoveredResults` / `findings` 字段生成这类输出
 

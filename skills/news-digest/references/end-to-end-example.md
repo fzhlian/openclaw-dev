@@ -109,6 +109,7 @@ python3 skills/news-digest/scripts/render_digest.py \
   --keywords "OpenAI" \
   --sites "openai.com" \
   --time-range "最近 7 天" \
+  --frequency "一次性" \
   --limit 2
 ```
 
@@ -151,6 +152,7 @@ python3 skills/news-digest/scripts/render_digest.py \
   --keywords "伊朗,战争,AI" \
   --sites "bbc.com,rfi.fr" \
   --time-range "最近 7 天" \
+  --frequency "一次性" \
   --limit 5
 ```
 
@@ -186,6 +188,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 关键词：OpenAI
 - 网站：openai.com
 - 时间范围：最近 7 天
+- 频率：一次性
 - 结果数：2
 - 输出模式：摘要总览 + 逐条清单
 - 输出语言：中文
