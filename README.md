@@ -1,9 +1,21 @@
-# codex-dev
+# openclaw-dev
 
-`codex-dev` 是一个面向 OpenClaw 的异步开发 skill，用于把 Codex 任务分发为后台作业，立即返回回执，并保存日志、摘要和补丁产物。  
-`codex-dev` is an async development skill for OpenClaw that dispatches Codex work as background jobs, returns an immediate receipt, and stores logs, summaries, and patch artifacts.
+`openclaw-dev` 是一个面向本地 OpenClaw 环境的总开发仓库，用于集中维护 skills、agents、脚本入口、包装工作区约定，以及社区发布流程。  
+`openclaw-dev` is a meta-repository for local OpenClaw development, used to maintain skills, agents, wrapper conventions, command entrypoints, and community publishing workflows in one place.
 
-## 核心能力 | Highlights
+## 仓库定位 | Repository Scope
+
+- 这是 OpenClaw 的总开发工作区仓库，不只是单一 skill。  
+  This repository is the OpenClaw development workspace, not just a single skill.
+- `codex-dev` 是当前最完整的独立 skill 项目，也是此仓库的核心示例。  
+  `codex-dev` is the most complete standalone skill project here and serves as the main reference implementation.
+- 运行态的 skills、agents、publish 映射和本地命令入口都围绕这个仓库进行维护。  
+  Runtime skills, agents, publish mappings, and local command entrypoints are maintained around this repository.
+
+## 当前核心项目 | Current Primary Project
+
+当前仓库里的核心项目是 `codex-dev`，它提供：  
+The primary project in this repository is `codex-dev`, which provides:
 
 - 后台分发 Codex 开发任务，并立即返回作业回执。  
   Dispatch Codex development tasks in the background and return a job receipt immediately.
@@ -13,8 +25,6 @@
   Support Telegram completion notifications for phone-driven development workflows.
 - 支持 `--workdir`，可显式指定实际执行目录。  
   Support `--workdir` to explicitly control the execution directory.
-- 为 OpenClaw 本地安装、社区发布和脚本维护提供统一项目结构。  
-  Provide a single project layout for local OpenClaw installation, community publishing, and script maintenance.
 
 ## 快速开始 | Quick Start
 
@@ -28,20 +38,21 @@
 ## 项目结构 | Project Structure
 
 - `skill/`  
-  OpenClaw / ClawHub 可发布 skill 包。  
-  The publishable OpenClaw / ClawHub skill package.
+  当前主项目 `codex-dev` 的可发布 OpenClaw / ClawHub skill 包。  
+  The publishable OpenClaw / ClawHub skill package for the current primary project, `codex-dev`.
 - `bin/`  
-  本地便捷命令包装。  
-  Local convenience command wrappers.
+  本地稳定命令入口包装。  
+  Stable local command wrappers.
 - `docs/`  
-  迁移说明、目录规范和后续维护文档。  
-  Migration notes, layout conventions, and maintenance documentation.
+  总工作区约定、迁移说明和后续维护文档。  
+  Meta-workspace conventions, migration notes, and maintenance documentation.
 
 推荐先阅读：  
 Recommended reading:
 
 - [`docs/migration.md`](docs/migration.md)
 - [`docs/conventions.md`](docs/conventions.md)
+- [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## 本地安装映射 | Local Install Mapping
 
@@ -59,8 +70,8 @@ The following local entrypoints should resolve to this project:
 
 ## 发布 | Publishing
 
-发布源目录：`skill/`  
-Publish source directory: `skill/`
+当前主项目 `codex-dev` 的发布源目录：`skill/`  
+Publish source directory for the current primary project `codex-dev`: `skill/`
 
 示例：  
 Example:
@@ -76,7 +87,6 @@ This project requires all Markdown documentation to be maintained in Chinese and
 
 ## 相关文档 | Related Docs
 
-- [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - [`skill/SKILL.md`](skill/SKILL.md)
 - [`skill/references/local-setup.md`](skill/references/local-setup.md)
 - [`CHANGELOG.md`](CHANGELOG.md)

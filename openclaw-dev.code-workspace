@@ -1,0 +1,37 @@
+{
+	"folders": [
+		{
+			"name": "codex-dev Skill Project",
+			"path": "/home/fzhlian/Code/codex-dev"
+		},
+		{
+			"name": "OpenClaw Skills",
+			"path": "/home/fzhlian/.openclaw/skills"
+		},
+		{
+			"name": "OpenClaw Agents",
+			"path": "/home/fzhlian/.openclaw/agents"
+		},
+		{
+			"name": "OpenClaw Wrapper Workspace",
+			"path": "/home/fzhlian/.openclaw/workspace-datahz-codex"
+		},
+		{
+			"name": "OpenClaw Publish",
+			"path": "/home/fzhlian/.openclaw/publish"
+		},
+		{
+			"name": "OpenClaw Bin",
+			"path": "/home/fzhlian/bin"
+		},
+		{
+			"name": "OpenClaw Root",
+			"path": "/home/fzhlian/.openclaw"
+		}
+	],
+	"settings": {
+		"files.exclude": {
+			"**/.git": true
+		}
+	}
+}
