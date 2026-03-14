@@ -5,8 +5,12 @@ All notable changes to this project will be tracked here.
 
 ## [Unreleased] | [未发布]
 
-- No unreleased changes yet.  
-  暂无未发布变更。
+- Added a minimal bilingual `CONTRIBUTING.md` for collaboration rules.  
+  增加最小双语 `CONTRIBUTING.md`，明确协作规则。
+- Polished the GitHub homepage README to use repository-friendly links and commands.  
+  调整 GitHub 首页 README，改为适合公开仓库的链接和命令写法。
+- Prepared the next community publish update after repository cleanup and documentation polish.  
+  在仓库清理和文档整理后，准备下一次社区发布更新。
 
 ## [0.1.1] - 2026-03-14
 

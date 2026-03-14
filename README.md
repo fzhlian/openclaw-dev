@@ -76,6 +76,7 @@ This project requires all Markdown documentation to be maintained in Chinese and
 
 ## 相关文档 | Related Docs
 
+- [`CONTRIBUTING.md`](CONTRIBUTING.md)
 - [`skill/SKILL.md`](skill/SKILL.md)
 - [`skill/references/local-setup.md`](skill/references/local-setup.md)
 - [`CHANGELOG.md`](CHANGELOG.md)
