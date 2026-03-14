@@ -154,6 +154,18 @@ def normalize_host(url: str) -> str:
     return host
 
 
+def pick_source_label(item: dict) -> str:
+    for key in ("matchedDomain", "sourceDomain"):
+        value = str(item.get(key, "")).strip()
+        if not value:
+            continue
+        try:
+            return normalize_site(value)
+        except ValueError:
+            continue
+    return normalize_host(str(item.get("url", "")).strip())
+
+
 def normalize_topics_display(value: str) -> str:
     items = dedupe_keywords(split_csv(value))
     return "、".join(items)
@@ -183,11 +195,7 @@ def render_overview(results: list[dict], max_items: int) -> list[str]:
     items: list[str] = []
     for item in results[:max_items]:
         title = str(item.get("title", "")).strip()
-        source = (
-            str(item.get("matchedDomain", "")).strip()
-            or str(item.get("sourceDomain", "")).strip()
-            or normalize_host(str(item.get("url", "")).strip())
-        )
+        source = pick_source_label(item)
         snippet = ""
         for key in SUMMARY_KEYS:
             value = str(item.get(key, "")).strip()
@@ -230,12 +238,7 @@ def render_article_item(item: dict, index: int) -> list[str]:
             break
     snippet = snippet or "（无摘要）"
     url = str(item.get("url", "")).strip()
-    source = (
-        str(item.get("matchedDomain", "")).strip()
-        or str(item.get("sourceDomain", "")).strip()
-        or normalize_host(url)
-        or "来源未标注"
-    )
+    source = pick_source_label(item) or "来源未标注"
     published_at = str(item.get("publishedAt", "")).strip() or DEFAULT_TIME_LABEL
     return [
         f"{index}. **{title}**",

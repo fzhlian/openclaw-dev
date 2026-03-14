@@ -894,6 +894,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("来源：openai.com ｜ 时间：时间未标注", result.stdout)
         self.assertNotIn("来源：来源未标注", result.stdout)
 
+    def test_render_digest_normalizes_source_domain_display(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://www.openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "sourceDomain": "WWW.OpenAI.COM",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("OpenAI policy update（来源：openai.com）：policy summary from search result", result.stdout)
+        self.assertIn("来源：openai.com ｜ 时间：时间未标注", result.stdout)
+        self.assertNotIn("WWW.OpenAI.COM", result.stdout)
+
     def test_render_digest_enforces_limit_in_rendered_results(self) -> None:
         input_path = self.write_json(
             {
