@@ -8,6 +8,7 @@ import json
 from typing import Any
 
 DEFAULT_LIMIT = 5
+MAX_LIMIT = 20
 DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 DEFAULT_LANGUAGE = "中文"
@@ -118,6 +119,8 @@ def main() -> int:
     args = parse_args()
     if args.limit < 1:
         raise SystemExit("--limit 必须 >= 1")
+    if args.limit > MAX_LIMIT:
+        raise SystemExit(f"--limit 必须 <= {MAX_LIMIT}")
 
     params = normalize_params(args)
     asks = ask_list(params)

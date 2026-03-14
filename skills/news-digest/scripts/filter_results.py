@@ -8,7 +8,7 @@ import json
 import re
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qsl, urlencode, urlparse
 
 SNIPPET_KEYS = ("snippet", "description", "summary", "content")
 PUBLISHED_AT_KEYS = ("publishedAt", "published_at", "date", "time")
@@ -40,6 +40,30 @@ def host_matches(host: str, domain: str) -> bool:
     return host == domain or host.endswith(f".{domain}")
 
 
+TRACKING_QUERY_KEYS = {
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "utm_term",
+    "utm_content",
+    "utm_id",
+    "utm_name",
+    "utm_cid",
+    "utm_reader",
+    "utm_referrer",
+    "utm_brand",
+    "utm_pubreferrer",
+    "gclid",
+    "fbclid",
+    "igshid",
+    "mc_cid",
+    "mc_eid",
+    "ref",
+    "ref_src",
+    "cmpid",
+}
+
+
 def normalize_url(url: str) -> str:
     parsed = urlparse(url.strip())
     scheme = parsed.scheme.lower() or "https"
@@ -47,7 +71,15 @@ def normalize_url(url: str) -> str:
     path = re.sub(r"/+", "/", parsed.path or "/")
     if path != "/" and path.endswith("/"):
         path = path[:-1]
-    return f"{scheme}://{host}{path}"
+
+    query_pairs = [
+        (key, value)
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+        if key.lower() not in TRACKING_QUERY_KEYS
+    ]
+    query = urlencode(query_pairs, doseq=True)
+    suffix = f"?{query}" if query else ""
+    return f"{scheme}://{host}{path}{suffix}"
 
 
 def normalize_title(title: str) -> str:
@@ -107,7 +139,7 @@ def normalize_result_item(item: dict) -> dict:
 def filter_results(results: list[dict], sites: list[str], auto_normalize: bool = False) -> dict[str, object]:
     domains = [normalize_site(site) for site in sites]
     seen_urls: set[str] = set()
-    seen_titles: set[str] = set()
+    seen_titles_by_domain: dict[str, set[str]] = {}
     kept: list[dict] = []
     dropped: list[dict] = []
 
@@ -144,8 +176,17 @@ def filter_results(results: list[dict], sites: list[str], auto_normalize: bool =
             dropped.append({"index": index, "reason": "duplicate_url", "normalizedUrl": normalized_url, "item": current})
             continue
 
+        seen_titles = seen_titles_by_domain.setdefault(matched_domain, set())
         if normalized_title and normalized_title in seen_titles:
-            dropped.append({"index": index, "reason": "duplicate_title", "normalizedTitle": normalized_title, "item": current})
+            dropped.append(
+                {
+                    "index": index,
+                    "reason": "duplicate_title",
+                    "matchedDomain": matched_domain,
+                    "normalizedTitle": normalized_title,
+                    "item": current,
+                }
+            )
             continue
 
         seen_urls.add(normalized_url)

@@ -74,7 +74,7 @@ def normalize_site(site: str) -> str:
 
 
 def is_english_site(domain: str) -> bool:
-    return domain in ENGLISH_DOMAINS
+    return any(domain == base or domain.endswith(f".{base}") for base in ENGLISH_DOMAINS)
 
 
 def keyword_seed(keyword: str) -> str:

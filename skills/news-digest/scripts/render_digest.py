@@ -26,9 +26,24 @@ def render_overview(results: list[dict], max_items: int) -> list[str]:
     items: list[str] = []
     for item in results[:max_items]:
         title = str(item.get("title", "")).strip()
+        source = str(item.get("matchedDomain", "")).strip() or str(item.get("sourceDomain", "")).strip()
+        snippet = str(item.get("snippet", "")).strip()
+        summary = snippet[:80].rstrip("，、；： ") if snippet else "暂无摘要信息"
+
         if title:
-            items.append(f"- {title}")
+            if source:
+                items.append(f"- {title}（来源：{source}）：{summary}")
+            else:
+                items.append(f"- {title}：{summary}")
     return items or ["- 未形成足够结果，暂不输出趋势摘要"]
+
+
+def validate_results(results: list[dict]) -> None:
+    for index, item in enumerate(results, start=1):
+        if not str(item.get("url", "")).strip():
+            raise ValueError(f"第 {index} 条结果缺少 url，不能渲染最终摘要")
+        if not str(item.get("title", "")).strip():
+            raise ValueError(f"第 {index} 条结果缺少 title，不能渲染最终摘要")
 
 
 def render_articles(results: list[dict]) -> list[str]:
@@ -36,6 +51,8 @@ def render_articles(results: list[dict]) -> list[str]:
     if not results:
         lines.append("- 暂无可输出结果")
         return lines
+
+    validate_results(results)
 
     for index, item in enumerate(results, start=1):
         title = str(item.get("title", "未命名条目")).strip() or "未命名条目"
@@ -46,7 +63,7 @@ def render_articles(results: list[dict]) -> list[str]:
             or "来源未标注"
         )
         published_at = str(item.get("publishedAt", "")).strip() or DEFAULT_TIME_LABEL
-        url = str(item.get("url", "")).strip() or "（无链接）"
+        url = str(item.get("url", "")).strip()
 
         lines.append(f"{index}. **{title}**")
         lines.append(f"   - 摘要：{snippet}")
@@ -111,11 +128,10 @@ def main() -> int:
 
     try:
         payload = load_payload(args.input)
+        print(build_markdown(payload, args))
     except (ValueError, json.JSONDecodeError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
-
-    print(build_markdown(payload, args))
     return 0
 
 
