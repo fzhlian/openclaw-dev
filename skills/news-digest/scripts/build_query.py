@@ -63,8 +63,12 @@ def load_list_file(path: str) -> list[str]:
     file = Path(path)
     if not file.exists():
         raise ValueError(f"文件不存在: {path}")
+    try:
+        content = file.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"读取文件失败: {path}") from exc
     items: list[str] = []
-    for line in file.read_text(encoding="utf-8").splitlines():
+    for line in content.splitlines():
         row = line.strip()
         if not row or row.startswith("#"):
             continue

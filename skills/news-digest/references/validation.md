@@ -164,6 +164,7 @@ python3 skills/news-digest/scripts/filter_results.py \
 - 重复 URL 会被丢弃
 - 不在目标域名内的结果会被丢弃
 - 若 `--site` 使用全角逗号 `，` 或中文顿号 `、` 分隔多个域名，仍能正确拆分并过滤
+- 若 `--input` 指向目录、不可读路径或坏文件，不应抛 Python traceback，而应直接输出明确错误
 
 ### 非域名站点输入
 
@@ -267,6 +268,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 若渲染输入里同一站点以完整 URL 与主域名重复传入，最终 `## 检索参数` 中也只应保留一次，不应回显重复域名
 - 若结果对象提供 `snippetZh` / `summaryZh`，应优先使用中文摘要字段
 - 若结果对象未提供中文摘要字段，可退回原始 `snippet` / `summary`，不要求脚本在渲染阶段强制翻译
+- 若 `--input` 指向目录、不可读路径或坏文件，不应抛 Python traceback，而应直接输出明确错误
 - 若传入不支持的 `--output-mode`，应直接报错，而不是继续输出平铺模板
 - 若传入非中文 `--language`，应直接报错，而不是继续输出中文模板
 - 若渲染输入里传入 `BBC` 之类非域名站点，应直接报错，而不是原样回显到最终参数区

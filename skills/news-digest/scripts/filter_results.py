@@ -102,7 +102,10 @@ def split_items(values: list[str]) -> list[str]:
 
 
 def load_results(path: str) -> list[dict]:
-    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    try:
+        data = json.loads(Path(path).read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ValueError(f"读取输入 JSON 失败: {path}") from exc
     if isinstance(data, list):
         return data
     if isinstance(data, dict) and isinstance(data.get("results"), list):

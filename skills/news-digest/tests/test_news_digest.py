@@ -97,6 +97,11 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["queries"], ["site:openai.com OpenAI"])
         self.assertEqual(payload["keywordPlan"]["openai.com"], ["OpenAI"])
 
+    def test_build_query_reports_invalid_list_file_path(self) -> None:
+        result = self.run_script("build_query.py", "--keyword-file", ".", "-s", "openai.com")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("读取文件失败: .", result.stderr)
+
     def test_intake_check_confirm_includes_frequency_and_default_language(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -514,6 +519,11 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("站点需使用域名，如 bbc.com；收到: BBC", result.stderr)
 
+    def test_filter_results_reports_invalid_input_path(self) -> None:
+        result = self.run_script("filter_results.py", "--input", ".", "--site", "bbc.com")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("读取输入 JSON 失败: .", result.stderr)
+
     def test_filter_results_splits_fullwidth_commas_in_sites(self) -> None:
         input_path = self.write_json(
             [
@@ -570,6 +580,11 @@ class NewsDigestScriptTests(unittest.TestCase):
         result = self.run_script("render_digest.py", "--input", input_path)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("缺少 url", result.stderr)
+
+    def test_render_digest_reports_invalid_input_path(self) -> None:
+        result = self.run_script("render_digest.py", "--input", ".")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("读取输入 JSON 失败: .", result.stderr)
 
     def test_render_digest_rejects_non_chinese_output_language(self) -> None:
         input_path = self.write_json(
