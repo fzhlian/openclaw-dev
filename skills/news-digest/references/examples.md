@@ -62,6 +62,28 @@
   - 先给当日核心动态摘要
   - 再按主题归类给出逐条文章清单（含链接与时间）
 
+## intake_check.py 示例
+
+### 输入不完整（生成追问 + 参数确认）
+
+```bash
+python3 scripts/intake_check.py \
+  --topic "OpenAI,Gemini" \
+  --time-range "最近 7 天"
+```
+
+### 输入完整（可直接确认）
+
+```bash
+python3 scripts/intake_check.py \
+  --topic "OpenAI,Gemini" \
+  --site "openai.com,blog.google" \
+  --time-range "最近 24 小时" \
+  --frequency "每日" \
+  --limit 6 \
+  --output-mode "按主题分组+逐条"
+```
+
 ## build_query.py 示例
 
 ### 命令行快速生成（显式开启扩词与翻译词）
