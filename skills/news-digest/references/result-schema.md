@@ -44,6 +44,36 @@
 
 摘要阶段应优先使用过滤后的结果对象，不要回退到原始搜索结果混合总结。
 
+## 降级输出载荷
+
+当搜索 provider 只能返回主题方向、摘要片段，或结果被过滤后已不足以形成有效摘要时，可直接构造降级输出载荷给 `render_digest.py`：
+
+```json
+{
+  "results": [],
+  "forceDegraded": true,
+  "discoveredResults": [
+    {
+      "topic": "BBC",
+      "note": "仅确认伊朗相关主题方向，未拿到稳定原文链接"
+    },
+    {
+      "site": "rfi.fr",
+      "detail": "确认存在 AI 与信息战相关结果，但当前 provider 未返回可直接落地的原文 URL"
+    }
+  ]
+}
+```
+
+约定：
+
+- `results`：保留为空列表，表示不输出正常 `文章清单`
+- `forceDegraded`：显式要求走降级渲染
+- `discoveredResults`：可选；用于承载“已发现结果”
+- `discoveredResults[*].topic/title/site`：三者取其一作为条目标识
+- `discoveredResults[*].summary/note/detail`：三者取其一作为条目说明
+- 若没有 `discoveredResults`，降级输出中的 `## 已发现结果` 会回落为“暂未拿到满足约束的可输出结果”
+
 ## 进入摘要前的最低要求
 
 进入摘要前，结果列表至少应满足：

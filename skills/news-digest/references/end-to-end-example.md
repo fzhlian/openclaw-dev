@@ -122,6 +122,48 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 第一条没有 `publishedAt` 时，显示“时间未标注”
 - 每条都带原始链接
 
+## Step 4b：provider 受限时的降级渲染
+
+当外部检索只能确认主题方向，拿不到稳定原文链接时，准备样例文件 `sample-e2e-degraded.json`：
+
+```json
+{
+  "results": [],
+  "forceDegraded": true,
+  "discoveredResults": [
+    {
+      "topic": "BBC",
+      "note": "仅确认伊朗相关主题方向，未拿到稳定原文链接"
+    },
+    {
+      "site": "rfi.fr",
+      "detail": "确认存在 AI 与信息战相关结果，但当前 provider 未返回可直接落地的原文 URL"
+    }
+  ]
+}
+```
+
+执行：
+
+```bash
+python3 skills/news-digest/scripts/render_digest.py \
+  --input sample-e2e-degraded.json \
+  --keywords "伊朗,战争,AI" \
+  --sites "bbc.com,rfi.fr" \
+  --time-range "最近 7 天" \
+  --limit 5
+```
+
+预期要点：
+
+- 不输出 `## 摘要总览`
+- 不输出 `## 文章清单`
+- 输出：
+  - `## 检索参数`
+  - `## 已发现结果`
+  - `## 局限与建议`
+- `## 已发现结果` 中明确说明哪些站点/主题只确认了方向，哪些结果因缺少稳定链接被排除
+
 ## 最小闭环结果示意
 
 ```markdown
