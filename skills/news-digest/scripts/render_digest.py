@@ -135,9 +135,60 @@ def render_limitations(args: argparse.Namespace) -> list[str]:
     ]
 
 
+def render_discovered_results(payload: dict) -> list[str]:
+    entries = payload.get("discoveredResults") or payload.get("findings") or []
+    lines = ["## 已发现结果"]
+    if not isinstance(entries, list) or not entries:
+        lines.append("- 暂未拿到满足约束的可输出结果")
+        return lines
+
+    for entry in entries:
+        if isinstance(entry, str):
+            text = entry.strip()
+            if text:
+                lines.append(f"- {text}")
+            continue
+
+        if not isinstance(entry, dict):
+            continue
+
+        label = (
+            str(entry.get("topic", "")).strip()
+            or str(entry.get("title", "")).strip()
+            or str(entry.get("site", "")).strip()
+        )
+        detail = (
+            str(entry.get("summary", "")).strip()
+            or str(entry.get("note", "")).strip()
+            or str(entry.get("detail", "")).strip()
+        )
+
+        if label and detail:
+            lines.append(f"- {label}：{detail}")
+        elif label:
+            lines.append(f"- {label}")
+        elif detail:
+            lines.append(f"- {detail}")
+
+    if len(lines) == 1:
+        lines.append("- 暂未拿到满足约束的可输出结果")
+    return lines
+
+
 def build_markdown(payload: dict, args: argparse.Namespace) -> str:
     results = payload.get("results", [])
-    lines: list[str] = ["## 摘要总览"]
+    force_degraded = bool(payload.get("forceDegraded"))
+
+    if force_degraded or not results:
+        lines: list[str] = []
+        lines.extend(render_parameters(args))
+        lines.append("")
+        lines.extend(render_discovered_results(payload))
+        lines.append("")
+        lines.extend(render_limitations(args))
+        return "\n".join(lines).strip() + "\n"
+
+    lines = ["## 摘要总览"]
     lines.extend(render_overview(results, max_items=args.overview_limit))
     lines.append("")
     lines.extend(render_articles(results, output_mode=args.output_mode))

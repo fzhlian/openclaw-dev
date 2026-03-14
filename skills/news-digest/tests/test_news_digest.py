@@ -98,6 +98,36 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("缺少 url", result.stderr)
 
+    def test_render_digest_degrades_when_no_results(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [],
+                "discoveredResults": [
+                    {"topic": "BBC", "note": "仅确认伊朗相关主题方向，未拿到稳定原文链接"}
+                ],
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--keywords",
+            "伊朗,战争,AI",
+            "--sites",
+            "bbc.com,rfi.fr,dw.com",
+            "--time-range",
+            "最近 7 天",
+            "--limit",
+            "5",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("## 检索参数", result.stdout)
+        self.assertIn("## 已发现结果", result.stdout)
+        self.assertIn("## 局限与建议", result.stdout)
+        self.assertIn("BBC：仅确认伊朗相关主题方向，未拿到稳定原文链接", result.stdout)
+        self.assertNotIn("## 摘要总览", result.stdout)
+        self.assertNotIn("## 文章清单", result.stdout)
+
     def test_render_digest_overview_contains_summary_not_only_title(self) -> None:
         input_path = self.write_json(
             {
