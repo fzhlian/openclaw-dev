@@ -7,6 +7,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 DEFAULT_TIME_LABEL = "时间未标注"
 DEFAULT_LIMITATIONS = "来源受限、时间缺失或覆盖不足时，结论仅基于当前检索结果。"
@@ -62,6 +63,40 @@ def normalize_time_range(value: str) -> str:
         return ""
     compact = "".join(text.split()).lower()
     return TIME_RANGE_ALIASES.get(compact, text)
+
+
+def split_csv(value: str) -> list[str]:
+    items: list[str] = []
+    for part in value.split(","):
+        item = part.strip()
+        if item:
+            items.append(item)
+    return list(dict.fromkeys(items))
+
+
+def normalize_site(value: str) -> str:
+    candidate = value.strip()
+    if "://" in candidate:
+        parsed = urlparse(candidate)
+        candidate = parsed.netloc or parsed.path
+    candidate = candidate.split("/")[0].strip().lower()
+    if candidate.startswith("www."):
+        candidate = candidate[4:]
+    if not candidate:
+        raise ValueError(f"无效站点: {value}")
+    if "." not in candidate:
+        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {value}")
+    return candidate
+
+
+def normalize_topics_display(value: str) -> str:
+    items = split_csv(value)
+    return "、".join(items)
+
+
+def normalize_sites_display(value: str) -> str:
+    items = split_csv(value)
+    return "、".join(normalize_site(item) for item in items)
 
 
 def load_payload(path: str) -> dict:
@@ -184,10 +219,12 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
     frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
     output_mode = normalize_output_mode(args.output_mode)
     time_range = normalize_time_range(args.time_range)
+    keywords = normalize_topics_display(args.keywords)
+    sites = normalize_sites_display(args.sites)
     return [
         "## 检索参数",
-        f"- 关键词：{args.keywords or '（未提供）'}",
-        f"- 网站：{args.sites or '（未提供）'}",
+        f"- 关键词：{keywords or '（未提供）'}",
+        f"- 网站：{sites or '（未提供）'}",
         f"- 时间范围：{time_range or '（未提供）'}",
         f"- 频率：{frequency or '（未提供）'}",
         f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",

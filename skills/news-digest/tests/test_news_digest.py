@@ -399,6 +399,59 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 时间范围：最近 24 小时", result.stdout)
 
+    def test_render_digest_normalizes_keywords_and_sites_in_parameter_block(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--keywords",
+            "OpenAI,Gemini",
+            "--sites",
+            "https://www.openai.com/index/policy,blog.google",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 关键词：OpenAI、Gemini", result.stdout)
+        self.assertIn("- 网站：openai.com、blog.google", result.stdout)
+
+    def test_render_digest_rejects_non_domain_site_in_parameter_block(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--sites",
+            "BBC",
+            "--overview-limit",
+            "1",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("站点需使用域名，如 bbc.com；收到: BBC", result.stderr)
+
     def test_render_digest_prefers_chinese_summary_fields(self) -> None:
         input_path = self.write_json(
             {
