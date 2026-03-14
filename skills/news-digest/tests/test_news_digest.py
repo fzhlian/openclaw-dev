@@ -47,6 +47,24 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertIn("Iran", payload["keywordPlan"]["world.bbc.com"])
 
+    def test_intake_check_confirm_includes_frequency(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--time-range",
+            "最近 24 小时",
+            "--frequency",
+            "一次性",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["频率"], "一次性")
+
     def test_filter_results_keeps_same_title_across_domains(self) -> None:
         input_path = self.write_json(
             [
