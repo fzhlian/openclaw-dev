@@ -1,4 +1,4 @@
-# Local setup
+# Local setup | 本地配置
 
 This package publishes a skill, not a full OpenClaw runtime state.
 
@@ -18,7 +18,7 @@ It is best suited for local async development workflows where you want:
 - 可选地把完成结果发到 Telegram
 - 允许用户指定工作目录
 
-## What you still configure locally
+## What you still configure locally | 仍需本地配置的内容
 
 - your Telegram bot token
 - your Telegram chat id
@@ -32,7 +32,7 @@ It is best suited for local async development workflows where you want:
 - 默认工作目录
 - OpenClaw agent 绑定和路由
 
-## Suggested local environment
+## Suggested local environment | 建议的本地环境变量
 
 ```bash
 export CODEX_DEV_DEFAULT_WORKDIR="/absolute/path/to/your/repo"
@@ -40,15 +40,17 @@ export CODEX_DEV_CHAT_ID="123456789"
 export TELEGRAM_BOT_TOKEN="your-bot-token"
 ```
 
-## Optional wrapper install
+## Optional wrapper install | 可选的包装命令安装
 
 From the installed skill folder:
+从已安装的 skill 目录执行：
 
 ```bash
 ./scripts/install-local.sh "$HOME/bin"
 ```
 
 That creates:
+它会创建：
 
 - `codex-dev`
 - `codex-help`
@@ -56,9 +58,10 @@ That creates:
 - `codex-dev-show`
 - `codex-dev-dispatch`
 
-## Suggested OpenClaw agent binding
+## Suggested OpenClaw agent binding | 建议的 OpenClaw agent 绑定
 
 Create or update a dedicated Telegram-bound agent that knows:
+创建或更新一个专用于 Telegram 的 agent，并确保它知道：
 
 - write requests should use `codex-dev`
 - read-only requests can answer directly
@@ -74,7 +77,7 @@ Recommended user-facing examples:
 - `/codex-dev --workdir /absolute/path 只在这个目录里修复问题`
 - `/codex-help`
 
-## Suggested publish metadata
+## Suggested publish metadata | 建议的发布元数据
 
 - slug: `codex-dev`
 - version: start with `0.1.0`
