@@ -573,6 +573,18 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["dropped"], 1)
         self.assertEqual(payload["results"][0]["normalizedUrl"], "https://example.com/post?id=1&page=2")
 
+    def test_filter_results_normalizes_scheme_less_urls(self) -> None:
+        input_path = self.write_json(
+            [
+                {"title": "One", "url": "example.com/post?id=1", "snippet": "1"},
+            ]
+        )
+        result = self.run_script("filter_results.py", "--input", input_path, "--site", "example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["kept"], 1)
+        self.assertEqual(payload["results"][0]["normalizedUrl"], "https://example.com/post?id=1")
+
     def test_filter_results_rejects_non_domain_site(self) -> None:
         input_path = self.write_json(
             [{"title": "One", "url": "https://www.bbc.com/news/a", "snippet": "1"}]

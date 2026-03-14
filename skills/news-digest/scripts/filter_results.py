@@ -67,7 +67,8 @@ TRACKING_QUERY_KEYS = {
 
 
 def normalize_url(url: str) -> str:
-    parsed = urlparse(url.strip())
+    raw = url.strip()
+    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
     scheme = parsed.scheme.lower() or "https"
     host = normalize_host(url)
     path = re.sub(r"/+", "/", parsed.path or "/")
