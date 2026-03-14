@@ -31,8 +31,9 @@ def normalize_site(site: str) -> str:
 
 
 def normalize_host(url: str) -> str:
-    parsed = urlparse(url.strip())
-    host = (parsed.netloc or parsed.path).split("/")[0].strip().lower()
+    raw = url.strip()
+    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
+    host = (parsed.hostname or "").strip().lower()
     if host.startswith("www."):
         host = host[4:]
     return host
@@ -73,6 +74,7 @@ def normalize_url(url: str) -> str:
     if scheme == "http":
         scheme = "https"
     host = normalize_host(url)
+    port = parsed.port
     path = re.sub(r"/+", "/", parsed.path or "/")
     if path != "/" and path.endswith("/"):
         path = path[:-1]
@@ -85,7 +87,10 @@ def normalize_url(url: str) -> str:
     query_pairs = sorted(query_pairs)
     query = urlencode(query_pairs, doseq=True)
     suffix = f"?{query}" if query else ""
-    return f"{scheme}://{host}{path}{suffix}"
+    netloc = host
+    if port and port not in {80, 443}:
+        netloc = f"{host}:{port}"
+    return f"{scheme}://{netloc}{path}{suffix}"
 
 
 def normalize_title(title: str) -> str:
