@@ -559,6 +559,20 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("https://example.com/post?id=1", normalized_urls)
         self.assertIn("https://example.com/post?id=2", normalized_urls)
 
+    def test_filter_results_deduplicates_reordered_query_params(self) -> None:
+        input_path = self.write_json(
+            [
+                {"title": "One", "url": "https://example.com/post?id=1&page=2", "snippet": "1"},
+                {"title": "Two", "url": "https://example.com/post?page=2&id=1", "snippet": "2"},
+            ]
+        )
+        result = self.run_script("filter_results.py", "--input", input_path, "--site", "example.com")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["kept"], 1)
+        self.assertEqual(payload["summary"]["dropped"], 1)
+        self.assertEqual(payload["results"][0]["normalizedUrl"], "https://example.com/post?id=1&page=2")
+
     def test_filter_results_rejects_non_domain_site(self) -> None:
         input_path = self.write_json(
             [{"title": "One", "url": "https://www.bbc.com/news/a", "snippet": "1"}]

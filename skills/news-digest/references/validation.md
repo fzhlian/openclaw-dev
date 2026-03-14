@@ -165,6 +165,7 @@ python3 skills/news-digest/scripts/filter_results.py \
 - 若同一站点以完整 URL 与主域名重复传入，输出载荷中的 `sites` 也只应保留一次归一化后的主域名
 - `bbc.com` 主域与子域结果都能保留
 - 重复 URL 会被丢弃
+- 若同一 URL 只是在 query 参数顺序上不同，也应视为同一链接并完成去重
 - 不在目标域名内的结果会被丢弃
 - 若 `--site` 使用全角逗号 `，` 或中文顿号 `、` 分隔多个域名，仍能正确拆分并过滤
 - 若 `--input` 指向目录、不可读路径或坏文件，不应抛 Python traceback，而应直接输出明确错误

@@ -79,6 +79,7 @@ def normalize_url(url: str) -> str:
         for key, value in parse_qsl(parsed.query, keep_blank_values=True)
         if key.lower() not in TRACKING_QUERY_KEYS
     ]
+    query_pairs = sorted(query_pairs)
     query = urlencode(query_pairs, doseq=True)
     suffix = f"?{query}" if query else ""
     return f"{scheme}://{host}{path}{suffix}"
