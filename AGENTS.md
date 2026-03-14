@@ -13,6 +13,7 @@
 - 先在本仓库完成判断，再决定是否需要查看 `~/.openclaw/skills`、`~/.openclaw/agents`、`~/.openclaw/workspace-*`
 - 需要修改可发布 skill 时，优先编辑仓库源码，而不是直接改运行态副本
 - 需要修改 agent 路由、审批、会话、workspace 约定时，再去改 `~/.openclaw/*`
+- 需要把 wrapper workspace 的 bootstrap / identity / user / tools 等提示文件纳入版本控制时，优先维护仓库内 `.openclaw/workspaces/<workspace-name>/` 的源码，再同步到 `~/.openclaw/workspace-*` 运行态副本
 - 任何会写文件的请求，都必须明确目标目录；默认工作目录是 `/home/fzhlian/Code/codex-dev`
 
 ## 开发行为

@@ -46,6 +46,9 @@ If you want to approve new exec requests directly from Telegram, enable `channel
 - `bin/`  
   本地稳定命令入口包装。  
   Stable local command wrappers.
+- `.openclaw/`
+  已纳入版本控制的 workspace 元数据，以及需要与本地运行态对齐的 wrapper 说明文件。
+  Versioned workspace metadata and managed wrapper instruction files that mirror local runtime state when needed.
 - `docs/`  
   总工作区约定、迁移说明和后续维护文档。  
   Meta-workspace conventions, migration notes, and maintenance documentation.

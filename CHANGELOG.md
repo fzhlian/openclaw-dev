@@ -15,6 +15,8 @@ All notable changes to this project will be tracked here.
   将 Telegram 侧 OpenClaw agent 与本地 `openclaw-dev` 仓库上下文对齐，并把历史 agent 重命名为 `openclaw-dev-codex`。
 - Added repository-root and wrapper bootstrap guidance so Telegram sessions start from the same project assumptions as local IDE work.  
   增加仓库根与 wrapper bootstrap 指引，使 Telegram 会话与本地 IDE 共享同一套项目前提。
+- Brought the tracked `openclaw-dev-codex` wrapper bootstrap, identity, heartbeat, tools, and user files under repository version control.
+  将受管的 `openclaw-dev-codex` wrapper bootstrap、identity、heartbeat、tools、user 文件纳入仓库版本控制。
 - Documented an exec-approval stability rule: do not restart the gateway while a Telegram approval prompt is waiting, or the approval id will expire.  
   记录 exec 审批稳定性规则：Telegram 审批单等待期间不要重启 gateway，否则审批 ID 会失效。
 - Verified that `gh release create` required adding the `workflow` scope to GitHub CLI, and confirmed local release creation after refreshing auth.  
