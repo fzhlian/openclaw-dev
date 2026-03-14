@@ -70,6 +70,8 @@ def normalize_url(url: str) -> str:
     raw = url.strip()
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
     scheme = parsed.scheme.lower() or "https"
+    if scheme == "http":
+        scheme = "https"
     host = normalize_host(url)
     path = re.sub(r"/+", "/", parsed.path or "/")
     if path != "/" and path.endswith("/"):

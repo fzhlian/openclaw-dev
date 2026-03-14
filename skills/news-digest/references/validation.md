@@ -167,6 +167,7 @@ python3 skills/news-digest/scripts/filter_results.py \
 - 重复 URL 会被丢弃
 - 若同一 URL 只是在 query 参数顺序上不同，也应视为同一链接并完成去重
 - 若结果 URL 缺少 scheme（如 `example.com/post?id=1`），归一化后的 `normalizedUrl` 也应补成合法的 `https://example.com/post?id=1`
+- 若同一链接只是在 `http://` / `https://` 协议上不同，也应视为同一链接；`normalizedUrl` 统一按 `https://` 归一化
 - 不在目标域名内的结果会被丢弃
 - 若 `--site` 使用全角逗号 `，` 或中文顿号 `、` 分隔多个域名，仍能正确拆分并过滤
 - 若 `--input` 指向目录、不可读路径或坏文件，不应抛 Python traceback，而应直接输出明确错误
