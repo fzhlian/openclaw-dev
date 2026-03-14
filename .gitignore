@@ -1,6 +1,8 @@
 .DS_Store
 *.log
 *.tgz
+*.pyc
+__pycache__/
 dist/
 tmp/
 .codex-dev/
