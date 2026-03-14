@@ -103,7 +103,9 @@ TIME_RANGE_ALIASES = {
 }
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
-KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
+EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
+KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
+SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
 PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
 
 
@@ -173,9 +175,9 @@ def dedupe_keywords(items: list[str]) -> list[str]:
 
 
 def normalize_site(value: str) -> str:
-    raw = value.strip()
+    raw = value.strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().lower().rstrip(".,，。;；:：!！?？")
+    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
     if candidate.startswith("www."):
         candidate = candidate[4:]
     if not candidate:
@@ -186,9 +188,9 @@ def normalize_site(value: str) -> str:
 
 
 def normalize_host(url: str) -> str:
-    raw = url.strip()
+    raw = url.strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    host = (parsed.hostname or "").strip().lower().rstrip(".,，。;；:：!！?？")
+    host = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
     if host.startswith("www."):
         host = host[4:]
     return host

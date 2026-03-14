@@ -13,12 +13,13 @@ from urllib.parse import parse_qsl, urlencode, urlparse
 SNIPPET_KEYS = ("snippet", "description", "summary", "content")
 PUBLISHED_AT_KEYS = ("publishedAt", "published_at", "date", "time")
 SOURCE_DOMAIN_KEYS = ("sourceDomain", "domain", "site", "source")
+SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？\"'“”‘’()（）[]【】<>《》"
 
 
 def normalize_site(site: str) -> str:
-    raw = site.strip()
+    raw = site.strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().lower().rstrip(".,，。;；:：!！?？")
+    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
     if candidate.startswith("www."):
         candidate = candidate[4:]
     if not candidate:
@@ -29,9 +30,9 @@ def normalize_site(site: str) -> str:
 
 
 def normalize_host(url: str) -> str:
-    raw = url.strip()
+    raw = url.strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    host = (parsed.hostname or "").strip().lower().rstrip(".,，。;；:：!！?？")
+    host = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
     if host.startswith("www."):
         host = host[4:]
     return host

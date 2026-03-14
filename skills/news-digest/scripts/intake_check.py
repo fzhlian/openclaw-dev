@@ -110,7 +110,9 @@ SITE_ALIASES = {
     "华尔街见闻": "wallstreetcn.com",
     "華爾街見聞": "wallstreetcn.com",
 }
-KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
+EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
+KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
+SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
 PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
 
 
@@ -149,9 +151,9 @@ def dedupe_keywords(items: list[str]) -> list[str]:
 
 
 def normalize_site(site: str) -> str:
-    raw = site.strip()
+    raw = site.strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().lower().rstrip(".,，。;；:：!！?？")
+    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
     if candidate.startswith("www."):
         candidate = candidate[4:]
     if not candidate:

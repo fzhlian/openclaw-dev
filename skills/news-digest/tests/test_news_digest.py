@@ -240,6 +240,21 @@ class NewsDigestScriptTests(unittest.TestCase):
             ['site:openai.com OpenAI -"ads" -"tracking"'],
         )
 
+    def test_build_query_strips_wrapping_quotes_and_parentheses(self) -> None:
+        result = self.run_script(
+            "build_query.py",
+            "-k",
+            "“OpenAI”",
+            "-s",
+            "（openai.com）",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["queries"], ["site:openai.com OpenAI"])
+        self.assertEqual(payload["keywordPlan"]["openai.com"], ["OpenAI"])
+
     def test_intake_check_confirm_includes_frequency_and_default_language(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -790,6 +805,21 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["输出语言"], "中文")
 
+    def test_intake_check_strips_wrapping_quotes_and_parentheses(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "“OpenAI”",
+            "--site",
+            "（openai.com）",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["关键词"], "OpenAI")
+        self.assertEqual(payload["confirm"]["网站"], "openai.com")
+
     def test_intake_check_deduplicates_keywords_case_insensitively(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -1054,6 +1084,24 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["kept"], 2)
         self.assertEqual(payload["sites"], ["openai.com", "blog.google"])
+
+    def test_filter_results_strips_wrapping_parentheses_from_sites(self) -> None:
+        input_path = self.write_json(
+            [
+                {"title": "One", "url": "https://openai.com/a", "snippet": "1"},
+            ]
+        )
+        result = self.run_script(
+            "filter_results.py",
+            "--input",
+            input_path,
+            "--site",
+            "（openai.com）",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["kept"], 1)
+        self.assertEqual(payload["sites"], ["openai.com"])
 
     def test_filter_results_accepts_urls_with_trailing_dot_hosts(self) -> None:
         input_path = self.write_json(
@@ -2031,6 +2079,34 @@ class NewsDigestScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 输出语言：中文", result.stdout)
+
+    def test_render_digest_strips_wrapping_quotes_and_parentheses(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "One",
+                        "url": "https://openai.com/a",
+                        "snippet": "1",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--keywords",
+            "“OpenAI”",
+            "--sites",
+            "（openai.com）",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 关键词：OpenAI", result.stdout)
+        self.assertIn("- 网站：openai.com", result.stdout)
 
     def test_render_digest_derives_source_domain_from_trailing_dot_url(self) -> None:
         input_path = self.write_json(
