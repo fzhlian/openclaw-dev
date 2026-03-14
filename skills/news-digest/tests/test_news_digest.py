@@ -262,6 +262,22 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["频率"], "每周")
 
+    def test_intake_check_normalizes_numeric_periodic_frequency_labels(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--frequency",
+            "每周1次",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["频率"], "每周")
+
     def test_intake_check_rejects_unsupported_frequency(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -1204,6 +1220,31 @@ class NewsDigestScriptTests(unittest.TestCase):
             input_path,
             "--frequency",
             "每周一次",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 频率：每周", result.stdout)
+
+    def test_render_digest_normalizes_numeric_periodic_frequency_labels(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--frequency",
+            "每周1次",
             "--overview-limit",
             "1",
         )
