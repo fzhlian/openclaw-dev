@@ -94,7 +94,7 @@ def normalize_title(title: str) -> str:
 def split_items(values: list[str]) -> list[str]:
     items: list[str] = []
     for value in values:
-        for part in value.split(","):
+        for part in value.replace("，", ",").split(","):
             item = part.strip()
             if item:
                 items.append(item)
