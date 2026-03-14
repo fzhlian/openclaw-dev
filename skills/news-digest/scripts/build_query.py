@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""根据关键词和站点生成检索查询列表。"""
+"""根据关键词和站点生成检索查询列表（支持关键词扩展与英文站点关键词转换）。"""
 
 from __future__ import annotations
 
@@ -8,6 +8,33 @@ import json
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
+
+ENGLISH_DOMAINS = {
+    "bbc.com",
+    "nytimes.com",
+    "dw.com",
+    "rfi.fr",
+    "reuters.com",
+    "apnews.com",
+}
+
+# 中文关键词 -> 英文主词 + 相关扩展词
+CN_TO_EN_EXPANSIONS: dict[str, list[str]] = {
+    "贪官": ["corruption", "graft", "anti-corruption", "official misconduct"],
+    "伊朗": ["Iran", "Iranian"],
+    "任命": ["appointment", "nomination", "cabinet reshuffle"],
+    "战争": ["war", "conflict", "military strike"],
+    "ai": ["AI", "artificial intelligence", "machine learning"],
+}
+
+# 中文关键词 -> 中文相关扩展词
+CN_EXPANSIONS: dict[str, list[str]] = {
+    "贪官": ["腐败", "反腐", "官员违纪"],
+    "伊朗": ["伊朗局势", "德黑兰"],
+    "任命": ["人事任命", "提名", "改组"],
+    "战争": ["冲突", "战事", "军事打击"],
+    "ai": ["人工智能", "机器学习", "大模型"],
+}
 
 
 def split_items(values: list[str]) -> list[str]:
@@ -46,20 +73,77 @@ def normalize_site(site: str) -> str:
     return candidate
 
 
-def build_queries(keywords: list[str], sites: list[str], excludes: list[str]) -> list[str]:
+def is_english_site(domain: str) -> bool:
+    if domain in ENGLISH_DOMAINS:
+        return True
+    if domain.endswith(".cn"):
+        return False
+    # 保守默认：非 .cn 域名按英文站点处理
+    return True
+
+
+def keyword_seed(keyword: str) -> str:
+    return keyword.strip().lower()
+
+
+def expand_keyword(keyword: str, english_mode: bool) -> list[str]:
+    seed = keyword_seed(keyword)
+
+    if english_mode and seed in CN_TO_EN_EXPANSIONS:
+        return CN_TO_EN_EXPANSIONS[seed]
+    if not english_mode and seed in CN_EXPANSIONS:
+        return [keyword.strip(), *CN_EXPANSIONS[seed]]
+
+    # 英文模式下保留原词并做少量通用扩展
+    if english_mode:
+        if seed == "ai":
+            return ["AI", "artificial intelligence", "machine learning"]
+        return [keyword.strip()]
+
+    return [keyword.strip()]
+
+
+def expand_keywords(keywords: list[str], english_mode: bool) -> list[str]:
+    results: list[str] = []
+    seen: set[str] = set()
+    for keyword in keywords:
+        for item in expand_keyword(keyword, english_mode):
+            term = item.strip()
+            if not term:
+                continue
+            marker = term.lower()
+            if marker not in seen:
+                seen.add(marker)
+                results.append(term)
+    return results
+
+
+def build_queries(
+    keywords: list[str],
+    sites: list[str],
+    excludes: list[str],
+    auto_expand: bool,
+    auto_english: bool,
+) -> tuple[list[str], dict[str, list[str]]]:
     queries: list[str] = []
     seen: set[str] = set()
     suffix = " ".join(f'-"{item}"' for item in excludes)
+    keyword_plan: dict[str, list[str]] = {}
 
     for site in sites:
         domain = normalize_site(site)
-        for keyword in keywords:
+        english_mode = auto_english and is_english_site(domain)
+        words = expand_keywords(keywords, english_mode) if auto_expand else keywords
+        keyword_plan[domain] = words
+
+        for keyword in words:
             core = f"site:{domain} {keyword.strip()}".strip()
             query = f"{core} {suffix}".strip() if suffix else core
             if query not in seen:
                 seen.add(query)
                 queries.append(query)
-    return queries
+
+    return queries, keyword_plan
 
 
 def parse_args() -> argparse.Namespace:
@@ -94,6 +178,16 @@ def parse_args() -> argparse.Namespace:
         action="append",
         default=[],
         help='排除词，可重复传入，也支持逗号分隔（输出为 -"词"）',
+    )
+    parser.add_argument(
+        "--no-expand",
+        action="store_true",
+        help="关闭关键词自动扩展（默认开启）",
+    )
+    parser.add_argument(
+        "--no-auto-english",
+        action="store_true",
+        help="关闭英文站点关键词自动英文化（默认开启）",
     )
     parser.add_argument(
         "--format",
@@ -131,13 +225,30 @@ def main() -> int:
         return 1
 
     try:
-        queries = build_queries(keywords, sites, excludes)
+        queries, keyword_plan = build_queries(
+            keywords=keywords,
+            sites=sites,
+            excludes=excludes,
+            auto_expand=not args.no_expand,
+            auto_english=not args.no_auto_english,
+        )
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
     if args.format == "json":
-        print(json.dumps({"queries": queries}, ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                {
+                    "queries": queries,
+                    "keywordPlan": keyword_plan,
+                    "autoExpand": not args.no_expand,
+                    "autoEnglish": not args.no_auto_english,
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
     else:
         for query in queries:
             print(query)

@@ -52,13 +52,13 @@
 
 ## build_query.py 示例
 
-### 命令行快速生成
+### 命令行快速生成（默认开启扩词与英文站点英文化）
 
 ```bash
 python3 scripts/build_query.py \
-  -k "OpenAI,GPT-5" \
-  -s "openai.com,https://github.com/openai/openai-python" \
-  -x "招聘,广告"
+  -k "贪官,伊朗,战争,ai" \
+  -s "bbc.com,nytimes.com,dw.com,rfi.fr" \
+  -x "广告,招聘"
 ```
 
 ### 文件输入 + JSON 输出
