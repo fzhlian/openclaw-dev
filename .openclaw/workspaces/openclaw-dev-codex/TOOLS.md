@@ -24,6 +24,8 @@
 - 这类资产盘点不要只看 `skills/`；必须区分仓库内 skill、可发布 `skill/`、运行态已安装 skill、运行态 agent、以及 workspace 提示配置
 - 如果目标是把资产盘点整理成仓库文档，也先从 `/home/fzhlian/bin/codex-dev-assets-inspect` 开始；不要先拼 `git status && find . && find .openclaw/workspaces ...`
 - 若目标是把资产盘点整理成仓库文档，后续写入必须走 `/home/fzhlian/bin/codex-dev-dispatch`；不要在 Telegram 会话里直接 `git add` / `git commit`
+- 若目标是升级/发布 `codex-dev` 到 OpenClaw / ClawHub，第一条预检查命令应为 `/home/fzhlian/bin/codex-dev-publish-inspect`；不要同时抛多个审批卡
+- 这类发布预检查不要探测本仓库没有的 `package.json` / `skill/package.json`
 - 若目标是 repo 级 code review，而工作区又是干净的，则继续读取最近提交或目标模块；不要把 `git status` 当成 review 终点
 - 若继续 review 需要第二轮只读命令，就直接发起真实命令，不要只输出占位式审批提示
 - 若目标是切换 skill / agent / 项目，优先基于 `/home/fzhlian/bin/codex-dev-assets-inspect` 得到候选名，再做模糊匹配

@@ -30,3 +30,6 @@
 22. 若用户说“审查代码”或“重新审查当前项目”，即使工作区干净，也继续查看最近提交或当前模块；不要停在 `git status`
 23. 若用户要切换 skill / agent / 项目，先做模糊匹配；唯一命中才切，多个命中就让用户选，零命中就直说不存在
 24. 切换项目时不要凭名字猜目标；候选集合优先来自 `codex-dev-assets-inspect`
+25. 若用户要“升级 codex-dev 并发布到 OpenClaw / ClawHub”，先只跑一次 `codex-dev-publish-inspect`；不要同时发多张审批卡
+26. 发布预检查只看 `skill/`、`README.md`、`CHANGELOG.md`；不要去查本仓库并不存在的 `package.json`
+27. 若发布失败是 `Version already exists` 或远端版本查询限流，先收敛到“确认下一个版本号”；不要在未确认前连续改多个候选版本

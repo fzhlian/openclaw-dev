@@ -255,6 +255,33 @@
 - 不重做已完成实现
 - 动作收敛成“只验证 + 提交”
 
+### 8. 发布路径
+
+测试语句：
+
+```text
+升级codex-dev并发布到OpenClaw
+```
+
+通过标准：
+
+- 第一条且唯一的预检查审批应为 `codex-dev-publish-inspect`
+- 不同时再抛额外的 `git status` / `rg` / `publish` 审批卡
+- 预检查只读取 `skill/`、`README.md`、`CHANGELOG.md`
+- 不去探测本仓库不存在的 `package.json` / `skill/package.json`
+
+若发布返回：
+
+```text
+Version already exists
+```
+
+通过标准：
+
+- 先停在“确认下一个版本号”这一步
+- 不在未确认前连续把版本文案改成 `0.1.2` / `0.1.3` / `0.1.10` 这类多个候选值
+- 若需要再查远端版本或重试，只追加一条下一步审批，不并发堆卡
+
 ## 判定原则
 
 - 通过：行为、边界、收尾方式都符合预期

@@ -32,6 +32,9 @@
 - 若用户说“审查代码”或“重新审查当前项目”，不要只因工作区干净就结束；应继续把最近提交、当前模块或仓库核心入口当作 review 对象
 - 对这类 repo 级 review，先用 `codex-dev-read-status` 获取仓库状态；若工作区干净，再继续读取最近提交或目标文件，而不是把 `git status` 当成 review 终点
 - 若为了继续 review 需要第二轮只读命令，就直接真正发起该命令；不要先输出占位式的“/approve <下一条审批ID>”说明文本
+- 若用户要“升级 codex-dev 并发布到 OpenClaw / ClawHub”，第一条且唯一的预检查命令应为 `codex-dev-publish-inspect`；不要同时抛出额外的 `git status`、`rg`、`publish` 审批卡
+- 对这类发布预检查，只读取真实存在的发布相关文件：`skill/`、`README.md`、`CHANGELOG.md`；不要去探测本仓库里并不存在的 `package.json` / `skill/package.json`
+- 若 `clawhub publish` 返回 `Version already exists` 或远端查询暂时限流，先停在“确认下一个版本号”这一步；不要在未确认可用版本前，把 `README.md` / `CHANGELOG.md` 连续改成多个候选版本
 - 如果用户明确说“只输出发现的问题”，则不要在 findings 之后再追加 happy path 说明、实现概述、额外正向事实或下一步建议；只有直接支撑某条发现时才可补一句必要事实
 - 回答保持简洁直接，少做寒暄，少重复铺垫
 - 语气保持中性、专业、克制；不要使用“爸爸”“宝贝”“亲爱的”等亲密或角色扮演式称呼
@@ -109,6 +112,7 @@
 - 对“帮我整理一份可放仓库的资产清单文档”这类请求，不要先展开成 `git status && find . && find .openclaw/workspaces ...` 这类多段只读命令链
 - 对“帮我整理成一份可放仓库的资产清单.md”这类请求，按写入型开发请求处理：Telegram 侧必须优先走 `codex-dev-dispatch`，不要在聊天里直接编辑、`git add`、`git commit`
 - 若这类写请求需要审批，审批卡片中应显示分发命令或真实写入动作；不要只展示 `git status` / `git add` / `git commit` 而省略真正的文档编辑步骤
+- 若已经给出具体可执行命令，而用户回复的是“同意 / 继续 / 可以 / 执行”，且当前还没有真实审批卡，就直接发起那张审批卡；不要让用户去批准一张还不存在的卡
 - 若用户已经明确要求继续开发，则完成必要预检查后直接进入实现、验证和汇报，不要把“最小方案”再次当成阻塞点
 - 若用户只说“继续开发”且当前活跃目标是 `news-digest`，则应默认先检查 `skills/news-digest` 现状，再自主选定下一步最小开发内容
 
