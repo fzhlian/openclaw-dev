@@ -354,6 +354,38 @@ class NewsDigestScriptTests(unittest.TestCase):
             result.stderr,
         )
 
+    def test_render_digest_rejects_limit_above_max(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                    }
+                ]
+            }
+        )
+        result = self.run_script("render_digest.py", "--input", input_path, "--limit", "21")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--limit 必须 <= 20", result.stderr)
+
+    def test_render_digest_rejects_limit_below_min(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                    }
+                ]
+            }
+        )
+        result = self.run_script("render_digest.py", "--input", input_path, "--limit", "0")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--limit 必须 >= 1", result.stderr)
+
     def test_render_digest_rejects_grouped_mode_without_topic_fields(self) -> None:
         input_path = self.write_json(
             {

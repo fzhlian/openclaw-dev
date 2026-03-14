@@ -10,6 +10,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 DEFAULT_LIMIT = 5
+MAX_LIMIT = 20
 DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_TIME_LABEL = "时间未标注"
 DEFAULT_LIMITATIONS = "来源受限、时间缺失或覆盖不足时，结论仅基于当前检索结果。"
@@ -348,6 +349,12 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.limit is not None and args.limit < 1:
+        print("--limit 必须 >= 1", file=sys.stderr)
+        return 1
+    if args.limit is not None and args.limit > MAX_LIMIT:
+        print(f"--limit 必须 <= {MAX_LIMIT}", file=sys.stderr)
+        return 1
     if args.overview_limit < 1:
         print("--overview-limit 必须 >= 1", file=sys.stderr)
         return 1
