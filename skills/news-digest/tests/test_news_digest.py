@@ -886,6 +886,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("2. **OpenAI roadmap note**", result.stdout)
         self.assertNotIn("OpenAI pricing note", result.stdout)
 
+    def test_render_digest_enforces_default_limit_in_rendered_results(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {"title": "t1", "url": "https://openai.com/1", "snippet": "s1", "matchedDomain": "openai.com"},
+                    {"title": "t2", "url": "https://openai.com/2", "snippet": "s2", "matchedDomain": "openai.com"},
+                    {"title": "t3", "url": "https://openai.com/3", "snippet": "s3", "matchedDomain": "openai.com"},
+                    {"title": "t4", "url": "https://openai.com/4", "snippet": "s4", "matchedDomain": "openai.com"},
+                    {"title": "t5", "url": "https://openai.com/5", "snippet": "s5", "matchedDomain": "openai.com"},
+                    {"title": "t6", "url": "https://openai.com/6", "snippet": "s6", "matchedDomain": "openai.com"},
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--overview-limit",
+            "10",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 结果数：5", result.stdout)
+        self.assertIn("5. **t5**", result.stdout)
+        self.assertNotIn("t6", result.stdout)
+
     def test_render_digest_normalizes_time_range_shorthand(self) -> None:
         input_path = self.write_json(
             {

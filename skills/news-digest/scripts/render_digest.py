@@ -358,8 +358,8 @@ def build_markdown(payload: dict, args: argparse.Namespace) -> str:
     results = payload.get("results", [])
     force_degraded = bool(payload.get("forceDegraded"))
     output_mode = normalize_output_mode(args.output_mode)
-    if args.limit is not None:
-        results = results[: args.limit]
+    effective_limit = args.limit if args.limit is not None else DEFAULT_LIMIT
+    results = results[:effective_limit]
 
     if force_degraded or not results:
         lines: list[str] = []
