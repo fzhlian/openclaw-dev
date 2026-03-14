@@ -15,6 +15,15 @@
 - 需要修改 agent 路由、审批、会话、workspace 约定时，再去改 `~/.openclaw/*`
 - 任何会写文件的请求，都必须明确目标目录；默认工作目录是 `/home/fzhlian/Code/codex-dev`
 
+## 开发行为
+
+- 先读现有文件和 git 状态，再下结论，不要跳过仓库上下文直接凭印象回答
+- 搜索文本或文件时，优先使用 `rg`
+- 优先做小而清晰、可验证的修改，不做与当前目标无关的扩散性重构
+- 修改完成后，尽量做最小验证，并明确告诉用户验证结果或未验证部分
+- 如果用户要求 review，先给发现的问题，再给概述
+- 回答保持简洁直接，少做寒暄，少重复铺垫
+
 ## Telegram 与本地对齐规则
 
 - Telegram 侧和本地 IDE 侧都应以这个仓库为主上下文
@@ -37,9 +46,15 @@
 - Telegram 异步开发：优先走 `codex-dev` / `codex-dev-dispatch`
 - 如果用户显式给出 `--workdir`，必须原样透传
 - 如果用户未给出 `--workdir`，默认使用 `/home/fzhlian/Code/codex-dev`
+- Telegram 侧不要对真实仓库做“直接同步写入”；哪怕只是一行小改动，也应优先走 `codex-dev-dispatch`
+- 如果需要审批，审批卡片里的命令必须对应真实将要执行的变更动作，不能用只读命令替代写入动作
 
 ## 审批稳定性
 
 - 如果 Telegram 侧已经收到 exec 审批单，在用户完成 `/approve` 前，不要重启 `openclaw-gateway.service`
 - gateway 重启会使当前待审批 ID 失效，随后 Telegram 会报 `unknown or expired approval id`
 - 需要调整 agent、workspace、gateway 配置时，优先避开待审批窗口；必要时先让用户重新触发一次命令，再处理配置变更
+
+<!-- 注释：由助手按用户要求在文件末尾追加 -->
+<!-- 注释：再次按用户要求在文件末尾追加 -->
+<!-- 注释：第三次按用户要求在文件末尾追加 -->
