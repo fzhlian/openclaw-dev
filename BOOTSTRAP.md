@@ -19,3 +19,5 @@
 11. 若 `codex-dev-skill-inspect` 已能回答问题，不要再追加 `git diff`、`find`、`rg` 等补充只读命令
 12. 若用户原话接近“继续完善今天的 news-digest 技能；先检查当前仓库状态和 skills/news-digest 现状，再给出最小实现方案”，则直接运行 `codex-dev-skill-inspect skills/news-digest`
 13. 对上面这个范例，不要自行展开成 `git status + git diff + find + rg` 的组合命令
+14. 若用户问“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”，则直接运行 `codex-dev-assets-inspect`
+15. 对这类资产盘点问题，必须同时覆盖仓库内 `skills/`、可发布 `skill/`、运行态 `~/.openclaw/skills`、`~/.openclaw/openclaw.json` 的 agent 列表，以及仓库 / 运行态 workspace 配置

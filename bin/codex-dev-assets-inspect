@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT_REPO="/home/fzhlian/Code/codex-dev"
+REPO_DIR="${CODEX_DEV_DEFAULT_WORKDIR:-$DEFAULT_REPO}"
+OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/.openclaw}"
+
+if [ ! -d "$REPO_DIR" ]; then
+  echo "Repo dir does not exist: $REPO_DIR" >&2
+  exit 1
+fi
+
+if ! git -C "$REPO_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+  echo "Not a git repository: $REPO_DIR" >&2
+  exit 1
+fi
+
+REPO_DIR="$(git -C "$REPO_DIR" rev-parse --show-toplevel)"
+OPENCLAW_JSON="$OPENCLAW_HOME/openclaw.json"
+
+printf '## repo_skills\n'
+find "$REPO_DIR/skills" -maxdepth 2 -name SKILL.md 2>/dev/null | LC_ALL=C sort | sed "s|^$REPO_DIR/||" || true
+
+printf '\n## publishable_skills\n'
+find "$REPO_DIR/skill" -maxdepth 1 -name SKILL.md 2>/dev/null | LC_ALL=C sort | sed "s|^$REPO_DIR/||" || true
+
+printf '\n## runtime_skills\n'
+if [ -d "$OPENCLAW_HOME/skills" ]; then
+  while IFS= read -r entry; do
+    [ -e "$entry" ] || continue
+    name="$(basename "$entry")"
+    if [ -f "$entry/SKILL.md" ]; then
+      target="$(readlink -f "$entry")"
+      printf '%s -> %s\n' "$name" "$target"
+    fi
+  done < <(find "$OPENCLAW_HOME/skills" -mindepth 1 -maxdepth 1 -print 2>/dev/null | LC_ALL=C sort)
+fi
+
+printf '\n## runtime_agents\n'
+if [ -f "$OPENCLAW_JSON" ]; then
+  python3 - "$OPENCLAW_JSON" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+for agent in data.get("agents", {}).get("list", []):
+    agent_id = agent.get("id", "")
+    if not agent_id or agent_id == "main":
+        continue
+    workspace = agent.get("workspace", "")
+    agent_dir = agent.get("agentDir", "")
+    model = agent.get("model", "")
+    print(f"{agent_id}\tworkspace={workspace}\tagentDir={agent_dir}\tmodel={model}")
+PY
+fi
+
+printf '\n## repo_workspaces\n'
+find "$REPO_DIR/.openclaw/workspaces" -mindepth 1 -maxdepth 2 -type f \( -name '*.md' -o -name '*.json' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | LC_ALL=C sort | sed "s|^$REPO_DIR/||" || true
+
+printf '\n## runtime_workspaces\n'
+find "$OPENCLAW_HOME" -maxdepth 2 -path "$OPENCLAW_HOME/workspace-*" -type f \( -name '*.md' -o -name '*.json' -o -name '*.yaml' -o -name '*.yml' \) 2>/dev/null | LC_ALL=C sort || true

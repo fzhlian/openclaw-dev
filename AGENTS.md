@@ -15,6 +15,8 @@
 - 需要修改 agent 路由、审批、会话、workspace 约定时，再去改 `~/.openclaw/*`
 - 需要把 wrapper workspace 的 bootstrap / identity / user / tools 等提示文件纳入版本控制时，优先维护仓库内 `.openclaw/workspaces/<workspace-name>/` 的源码，再同步到 `~/.openclaw/workspace-*` 运行态副本
 - 任何会写文件的请求，都必须明确目标目录；默认工作目录是 `/home/fzhlian/Code/codex-dev`
+- 回答“你自己开发了哪些 skill / agent / workspace”时，不要只看一个目录；至少区分仓库内 `skills/`、可发布 `skill/`、运行态 `~/.openclaw/skills`、运行态 `~/.openclaw/openclaw.json` agent 列表、以及 `.openclaw/workspaces/` / `~/.openclaw/workspace-*`
+- 盘点用户自研资产时，要明确区分“仓库内 skill”“可发布 skill”“运行态已安装 skill”“运行态 agent”“workspace 提示配置”，不要把它们混成一个数字
 
 ## 开发行为
 
@@ -84,6 +86,8 @@
 - 对“先检查当前仓库状态和某个 skill 现状，再给方案”这类请求，默认必须使用 `codex-dev-skill-inspect <skill-path>`；只有用户显式要求更细的 diff/grep 时，才额外补命令
 - 字面范例：如果用户说“继续完善今天的 news-digest 技能；先检查当前仓库状态和 skills/news-digest 现状，再给出最小实现方案”，默认第一条也是唯一预检查命令应为 `codex-dev-skill-inspect skills/news-digest`
 - 对上述范例，不要改写成 `git status && git diff && find ...` 或 `pwd && ...` 这类多段只读命令链
+- 如果用户问“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”，默认先使用 `codex-dev-assets-inspect`，不要自己拼 `find skills ... && find ~/.openclaw/agents ...`
+- 对这类资产盘点问题，不要只查 `skills/`；必须同时覆盖 `skill/`、`~/.openclaw/skills`、`~/.openclaw/openclaw.json` 的 agent 列表，以及仓库 / 运行态 workspace 配置
 - 若用户已经明确要求继续开发，则完成必要预检查后直接进入实现、验证和汇报，不要把“最小方案”再次当成阻塞点
 - 若用户只说“继续开发”且当前活跃目标是 `news-digest`，则应默认先检查 `skills/news-digest` 现状，再自主选定下一步最小开发内容
 

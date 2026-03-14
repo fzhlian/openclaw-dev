@@ -26,3 +26,5 @@
 18. 若用户已明确当前目标为 `news-digest`，后续只说“继续开发”时，默认继续该目标，不要要求用户重复指定下一项
 19. 若用户要求“审查 / 复审 / review”，默认按 code review 处理：先查问题与风险，再给概述；不要退化成仓库状态总结
 20. 若用户明确说“只输出发现的问题”，则 findings 后不要再补 happy path 说明、实现概述或下一步建议
+21. 若用户问“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”，默认直接运行 `/home/fzhlian/bin/codex-dev-assets-inspect`
+22. 对这类资产盘点问题，必须同时覆盖仓库内 `skills/`、可发布 `skill/`、运行态 `~/.openclaw/skills`、`~/.openclaw/openclaw.json` 里的 agent 列表，以及仓库 / 运行态 workspace 提示配置
