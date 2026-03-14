@@ -202,6 +202,22 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 两条结果都保留原始链接
 - 输出结构与 `SKILL.md` 中的模板保持一致
 
+## 验证 6：端到端最小闭环
+
+可参考 `references/end-to-end-example.md`，顺序执行：
+
+1. `intake_check.py` 生成参数确认
+2. `build_query.py` 生成查询
+3. `filter_results.py --normalize` 过滤模拟候选结果
+4. `render_digest.py` 渲染最终 Markdown
+
+预期：
+
+- 4 个脚本可以按文档顺序串起来
+- 过滤阶段能去掉非目标域名结果
+- 渲染阶段能保留链接，并对缺失时间显示“时间未标注”
+- 输出结构仍符合 `SKILL.md` 模板
+
 ## 回归检查
 
 修改 `SKILL.md` 后，再检查以下约束仍成立：
