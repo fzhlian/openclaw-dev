@@ -75,6 +75,18 @@ def split_csv(values: list[str]) -> list[str]:
     return list(dict.fromkeys(items))
 
 
+def dedupe_keywords(items: list[str]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        marker = item.casefold()
+        if marker in seen:
+            continue
+        seen.add(marker)
+        deduped.append(item)
+    return deduped
+
+
 def normalize_site(site: str) -> str:
     candidate = site.strip()
     if "://" in candidate:
@@ -133,7 +145,7 @@ def normalize_time_range(value: str) -> str:
 
 
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
-    topics = split_csv(args.topic)
+    topics = dedupe_keywords(split_csv(args.topic))
     sites = list(dict.fromkeys(normalize_site(site) for site in split_csv(args.site)))
     return {
         "topics": topics,

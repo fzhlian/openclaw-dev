@@ -47,6 +47,18 @@ def split_items(values: list[str]) -> list[str]:
     return items
 
 
+def dedupe_keywords(items: list[str]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        marker = item.casefold()
+        if marker in seen:
+            continue
+        seen.add(marker)
+        deduped.append(item)
+    return deduped
+
+
 def load_list_file(path: str) -> list[str]:
     file = Path(path)
     if not file.exists():
@@ -211,7 +223,7 @@ def main() -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
-    keywords = list(dict.fromkeys(item.strip() for item in keywords if item.strip()))
+    keywords = dedupe_keywords([item.strip() for item in keywords if item.strip()])
     sites = list(dict.fromkeys(item.strip() for item in sites if item.strip()))
 
     if not keywords:

@@ -82,6 +82,21 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("site:blog.google OpenAI", lines)
         self.assertIn("site:blog.google Gemini", lines)
 
+    def test_build_query_deduplicates_keywords_case_insensitively(self) -> None:
+        result = self.run_script(
+            "build_query.py",
+            "-k",
+            "OpenAI, openai",
+            "-s",
+            "openai.com",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["queries"], ["site:openai.com OpenAI"])
+        self.assertEqual(payload["keywordPlan"]["openai.com"], ["OpenAI"])
+
     def test_intake_check_confirm_includes_frequency_and_default_language(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -363,6 +378,20 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["关键词"], "OpenAI、Gemini")
         self.assertEqual(payload["confirm"]["网站"], "openai.com、blog.google")
+
+    def test_intake_check_deduplicates_keywords_case_insensitively(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI, openai",
+            "--site",
+            "openai.com",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["关键词"], "OpenAI")
 
     def test_intake_check_rejects_non_domain_site(self) -> None:
         result = self.run_script(
@@ -931,6 +960,32 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 关键词：OpenAI、Gemini", result.stdout)
         self.assertIn("- 网站：openai.com、blog.google", result.stdout)
+
+    def test_render_digest_deduplicates_keywords_case_insensitively(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--keywords",
+            "OpenAI, openai",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 关键词：OpenAI", result.stdout)
+        self.assertNotIn("- 关键词：OpenAI、openai", result.stdout)
 
     def test_render_digest_rejects_non_domain_site_in_parameter_block(self) -> None:
         input_path = self.write_json(

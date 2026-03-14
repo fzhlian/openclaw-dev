@@ -87,6 +87,18 @@ def split_csv(value: str) -> list[str]:
     return list(dict.fromkeys(items))
 
 
+def dedupe_keywords(items: list[str]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        marker = item.casefold()
+        if marker in seen:
+            continue
+        seen.add(marker)
+        deduped.append(item)
+    return deduped
+
+
 def normalize_site(value: str) -> str:
     candidate = value.strip()
     if "://" in candidate:
@@ -111,7 +123,7 @@ def normalize_host(url: str) -> str:
 
 
 def normalize_topics_display(value: str) -> str:
-    items = split_csv(value)
+    items = dedupe_keywords(split_csv(value))
     return "、".join(items)
 
 
