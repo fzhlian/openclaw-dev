@@ -488,6 +488,7 @@ class NewsDigestScriptTests(unittest.TestCase):
             "1",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("OpenAI policy update（来源：openai.com）：policy summary from search result", result.stdout)
         self.assertIn("来源：openai.com ｜ 时间：时间未标注", result.stdout)
         self.assertNotIn("来源：来源未标注", result.stdout)
 

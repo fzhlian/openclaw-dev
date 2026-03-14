@@ -122,7 +122,11 @@ def render_overview(results: list[dict], max_items: int) -> list[str]:
     items: list[str] = []
     for item in results[:max_items]:
         title = str(item.get("title", "")).strip()
-        source = str(item.get("matchedDomain", "")).strip() or str(item.get("sourceDomain", "")).strip()
+        source = (
+            str(item.get("matchedDomain", "")).strip()
+            or str(item.get("sourceDomain", "")).strip()
+            or normalize_host(str(item.get("url", "")).strip())
+        )
         snippet = ""
         for key in SUMMARY_KEYS:
             value = str(item.get(key, "")).strip()
