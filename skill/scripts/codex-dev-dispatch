@@ -7,6 +7,28 @@ WORKER_BIN="${SCRIPT_DIR}/codex-dev-worker"
 JOBS_ROOT="${CODEX_DEV_JOBS_ROOT:-$HOME/.codex-dev/jobs}"
 DRY_RUN="${CODEX_DEV_DRY_RUN:-0}"
 DEFAULT_WORKDIR="${CODEX_DEV_DEFAULT_WORKDIR:-$PWD}"
+GATEWAY_WRAPPER_DIR="${CODEX_DEV_GATEWAY_WRAPPER_DIR:-$HOME/.openclaw/bin}"
+
+sanitize_path() {
+  local raw_path="${1:-}"
+  local sanitized=""
+  local segment=""
+  local old_ifs="$IFS"
+  IFS=:
+  for segment in $raw_path; do
+    [ -n "$segment" ] || continue
+    if [ "$segment" = "$GATEWAY_WRAPPER_DIR" ]; then
+      continue
+    fi
+    if [ -n "$sanitized" ]; then
+      sanitized="${sanitized}:$segment"
+    else
+      sanitized="$segment"
+    fi
+  done
+  IFS="$old_ifs"
+  printf '%s\n' "$sanitized"
+}
 
 usage() {
   cat <<'EOF'
@@ -186,6 +208,8 @@ env \
   CODEX_DEV_WORKDIR="$WORKDIR" \
   CODEX_DEV_JOBS_ROOT="$JOBS_ROOT" \
   CODEX_DEV_SKILL_DIR="$SKILL_DIR" \
+  CODEX_DEV_GATEWAY_WRAPPER_DIR="$GATEWAY_WRAPPER_DIR" \
+  PATH="$(sanitize_path "$PATH")" \
   nohup "$WORKER_BIN" "$JOB_ID" >>"$LOG_FILE" 2>&1 </dev/null &
 WORKER_PID=$!
 write_status "queued" "$WORKER_PID" "$DRY_RUN"

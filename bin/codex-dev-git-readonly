@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REAL_GIT="/usr/bin/git"
+
+if [ ! -x "$REAL_GIT" ]; then
+  echo "git not found at $REAL_GIT" >&2
+  exit 127
+fi
+
+global_args=()
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -C|--git-dir|--work-tree|-c)
+      global_args+=("$1")
+      shift
+      if [ "$#" -eq 0 ]; then
+        echo "Missing value for git option." >&2
+        exit 2
+      fi
+      global_args+=("$1")
+      shift
+      ;;
+    --no-pager|--no-optional-locks)
+      global_args+=("$1")
+      shift
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      global_args+=("$1")
+      shift
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+subcommand="${1:-status}"
+
+case "$subcommand" in
+  status|rev-parse|ls-files|branch|diff|show|log|remote|symbolic-ref|help|version)
+    exec "$REAL_GIT" "${global_args[@]}" "$subcommand" "${@:2}"
+    ;;
+  *)
+    echo "openclaw gateway git wrapper only allows read-only subcommands." >&2
+    echo "Allowed: status, rev-parse, ls-files, branch, diff, show, log, remote, symbolic-ref, help, version." >&2
+    exit 126
+    ;;
+esac

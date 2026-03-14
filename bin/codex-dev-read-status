@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+WORKDIR="${1:-/home/fzhlian/Code/codex-dev}"
+
+case "$WORKDIR" in
+  /*) ;;
+  *)
+    echo "Workdir must be an absolute path: $WORKDIR" >&2
+    exit 1
+    ;;
+esac
+
+if [ ! -d "$WORKDIR" ]; then
+  echo "Workdir does not exist: $WORKDIR" >&2
+  exit 1
+fi
+
+if ! git -C "$WORKDIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+  echo "Not a git repository: $WORKDIR" >&2
+  exit 1
+fi
+
+exec git -C "$WORKDIR" status --short --branch

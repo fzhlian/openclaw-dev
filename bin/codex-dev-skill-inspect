@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT_REPO="/home/fzhlian/Code/codex-dev"
+REPO_DIR="${CODEX_DEV_DEFAULT_WORKDIR:-$DEFAULT_REPO}"
+TARGET="${1:-}"
+
+if [ -z "$TARGET" ]; then
+  echo "Usage: codex-dev-skill-inspect <skill-path-within-repo>" >&2
+  exit 2
+fi
+
+if [ ! -d "$REPO_DIR" ]; then
+  echo "Repo dir does not exist: $REPO_DIR" >&2
+  exit 1
+fi
+
+if ! git -C "$REPO_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+  echo "Not a git repository: $REPO_DIR" >&2
+  exit 1
+fi
+
+REPO_DIR="$(git -C "$REPO_DIR" rev-parse --show-toplevel)"
+
+case "$TARGET" in
+  /*)
+    case "$TARGET" in
+      "$REPO_DIR"/*) REL_PATH="${TARGET#$REPO_DIR/}" ;;
+      *)
+        echo "Target must be inside repo: $TARGET" >&2
+        exit 1
+        ;;
+    esac
+    ;;
+  *)
+    REL_PATH="$TARGET"
+    ;;
+esac
+
+if [[ "$REL_PATH" = /* ]] || [[ "$REL_PATH" = ../* ]] || [[ "$REL_PATH" = */../* ]] || [[ "$REL_PATH" = .. ]]; then
+  echo "Target must stay within repo: $REL_PATH" >&2
+  exit 1
+fi
+
+if [ ! -d "$REPO_DIR/$REL_PATH" ]; then
+  echo "Target directory does not exist: $REL_PATH" >&2
+  exit 1
+fi
+
+printf '## repo_status\n'
+git -C "$REPO_DIR" status --short --branch
+
+printf '\n## target\n%s\n' "$REL_PATH"
+
+printf '\n## target_status\n'
+git -C "$REPO_DIR" status --short -- "$REL_PATH"
+
+printf '\n## target_diff\n'
+if git -C "$REPO_DIR" diff --quiet -- "$REL_PATH"; then
+  printf '(clean)\n'
+else
+  git -C "$REPO_DIR" diff -- "$REL_PATH"
+fi
+
+printf '\n## target_files\n'
+find "$REPO_DIR/$REL_PATH" -maxdepth 3 -type f | LC_ALL=C sort | sed "s|^$REPO_DIR/||"
+
+printf '\n## recent_commits\n'
+git -C "$REPO_DIR" log --oneline -n 5 -- "$REL_PATH"

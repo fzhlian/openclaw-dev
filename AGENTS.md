@@ -33,6 +33,10 @@
 - 先完成主目标，再处理顺手问题；顺手问题若会扩大改动面，应单独说明
 - 修改后优先做最小闭环：至少确认目标文件、关键命令或关键路径已按预期工作
 - 结论要基于真实文件和实际结果，不用聊天惯性、历史印象或模板文本代替当前仓库事实
+- 若用户已经明确发出开发/修改请求，且范围足够清晰，则在完成最小诊断后直接实施；不要重复停在“如果你同意我再改”
+- 只有在范围冲突、风险显著扩大、会碰到无关脏改动，或目标仍不明确时，才额外请求确认
+- 若用户提到“刚才/上一条/前面那个方案”，先以当前线程可见上下文为准；若当前线程里确实没有，就用一句话请求用户重贴，不要自己去猜
+- 对普通仓库开发任务，不要通过 `memory_search`、`sessions_*` 或 `~/.openclaw` 会话日志去回溯“刚才的方案”；只有用户明确要求查日志/查历史记录时才这么做
 
 ## Telegram 与本地对齐规则
 
@@ -58,9 +62,18 @@
 - 如果用户未给出 `--workdir`，默认使用 `/home/fzhlian/Code/codex-dev`
 - Telegram 侧开发也应遵守和本地一样的判断顺序：先读上下文，再确定改动，再决定执行路径
 - 对会明显扩大范围的写入，应先收窄变更面，再继续实现
+- Telegram 侧做仓库只读预检查时，必须优先使用 `codex-dev-read-status`，不要默认调用 `git status`
+- 只有在 `codex-dev-read-status` 无法满足问题时，才允许补充其他只读 git 命令
+- 如果只需查看某个子目录或文件的 git 状态与最近提交，优先使用 `codex-dev-git-path-report <path>`
+- 如果要同时看“仓库状态 + 某个 skill 目录现状”，优先使用 `codex-dev-skill-inspect <skill-path>`，不要再拼一长串 `pwd && git status && find && rg`
+- 对“先检查当前仓库状态和某个 skill 现状，再给方案”这类请求，默认必须使用 `codex-dev-skill-inspect <skill-path>`；只有用户显式要求更细的 diff/grep 时，才额外补命令
+- 字面范例：如果用户说“继续完善今天的 news-digest 技能；先检查当前仓库状态和 skills/news-digest 现状，再给出最小实现方案”，默认第一条也是唯一预检查命令应为 `codex-dev-skill-inspect skills/news-digest`
+- 对上述范例，不要改写成 `git status && git diff && find ...` 或 `pwd && ...` 这类多段只读命令链
+- 若用户已经明确要求继续开发，则完成必要预检查后直接进入实现、验证和汇报，不要把“最小方案”再次当成阻塞点
 
 ## 审批稳定性
 
 - 如果 Telegram 侧已经收到 exec 审批单，在用户完成 `/approve` 前，不要重启 `openclaw-gateway.service`
 - gateway 重启会使当前待审批 ID 失效，随后 Telegram 会报 `unknown or expired approval id`
 - 需要调整 agent、workspace、gateway 配置时，优先避开待审批窗口；必要时先让用户重新触发一次命令，再处理配置变更
+- 如果正在做“多轮连续开发对齐”测试，不要主动清空 Telegram session；否则新一轮会看不到上一条里刚给出的最小方案或上下文
