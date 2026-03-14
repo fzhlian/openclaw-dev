@@ -142,7 +142,7 @@ def dedupe_keywords(items: list[str]) -> list[str]:
 def normalize_site(value: str) -> str:
     raw = value.strip()
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().lower()
+    candidate = (parsed.hostname or "").strip().lower().rstrip(".,，。;；:：!！?？")
     if candidate.startswith("www."):
         candidate = candidate[4:]
     if not candidate:

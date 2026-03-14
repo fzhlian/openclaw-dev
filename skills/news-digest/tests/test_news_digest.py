@@ -127,6 +127,19 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("site:blog.google OpenAI", lines)
         self.assertIn("site:blog.google Gemini", lines)
 
+    def test_build_query_strips_trailing_site_punctuation(self) -> None:
+        result = self.run_script(
+            "build_query.py",
+            "-k",
+            "OpenAI",
+            "-s",
+            "openai.com.,blog.google。",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = result.stdout.strip().splitlines()
+        self.assertIn("site:openai.com OpenAI", lines)
+        self.assertIn("site:blog.google OpenAI", lines)
+
     def test_build_query_deduplicates_keywords_case_insensitively(self) -> None:
         result = self.run_script(
             "build_query.py",
@@ -615,6 +628,20 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["confirm"]["关键词"], "OpenAI、Gemini")
         self.assertEqual(payload["confirm"]["网站"], "openai.com、blog.google")
 
+    def test_intake_check_strips_trailing_site_punctuation(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com.,blog.google。",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["网站"], "openai.com、blog.google")
+
     def test_intake_check_deduplicates_keywords_case_insensitively(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -842,6 +869,25 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["kept"], 2)
+
+    def test_filter_results_strips_trailing_site_punctuation(self) -> None:
+        input_path = self.write_json(
+            [
+                {"title": "One", "url": "https://openai.com/a", "snippet": "1"},
+                {"title": "Two", "url": "https://blog.google/b", "snippet": "2"},
+            ]
+        )
+        result = self.run_script(
+            "filter_results.py",
+            "--input",
+            input_path,
+            "--site",
+            "openai.com.,blog.google。",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["kept"], 2)
+        self.assertEqual(payload["sites"], ["openai.com", "blog.google"])
 
     def test_filter_results_deduplicates_sites_after_normalization(self) -> None:
         input_path = self.write_json(
@@ -1615,6 +1661,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 关键词：OpenAI、Gemini", result.stdout)
+        self.assertIn("- 网站：openai.com、blog.google", result.stdout)
+
+    def test_render_digest_strips_trailing_site_punctuation(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--sites",
+            "openai.com.,blog.google。",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 网站：openai.com、blog.google", result.stdout)
 
     def test_render_digest_normalizes_ideographic_commas_in_parameter_block(self) -> None:
