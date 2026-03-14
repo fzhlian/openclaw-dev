@@ -63,7 +63,7 @@ def pick_topic(item: dict) -> str:
         value = str(item.get(key, "")).strip()
         if value:
             return value
-    return "未分组主题"
+    return ""
 
 
 def render_article_item(item: dict, index: int) -> list[str]:
@@ -100,6 +100,11 @@ def render_articles(results: list[dict], output_mode: str) -> list[str]:
     validate_results(results)
 
     if output_mode == GROUPED_OUTPUT_MODE:
+        missing_topics = [str(index) for index, item in enumerate(results, start=1) if not pick_topic(item)]
+        if missing_topics:
+            raise ValueError(
+                "按主题分组+逐条 模式要求每条结果包含 topic / queryTopic / keyword / query 字段"
+            )
         groups: dict[str, list[dict]] = {}
         order: list[str] = []
         for item in results:

@@ -163,6 +163,32 @@ class NewsDigestScriptTests(unittest.TestCase):
             result.stderr,
         )
 
+    def test_render_digest_rejects_grouped_mode_without_topic_fields(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--output-mode",
+            "按主题分组+逐条",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(
+            "按主题分组+逐条 模式要求每条结果包含 topic / queryTopic / keyword / query 字段",
+            result.stderr,
+        )
+
     def test_render_digest_degrades_when_no_results(self) -> None:
         input_path = self.write_json(
             {

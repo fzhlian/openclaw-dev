@@ -253,6 +253,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - `## 检索参数` 中显示本次 `输出模式`
 - `## 检索参数` 中显示本次 `频率`
 - `## 检索参数` 中仍显示 `输出语言：中文`
+- 若缺少 `topic` / `queryTopic` / `keyword` / `query` 字段，则应直接报错，而不是输出 `未分组主题`
 
 ## 验证 6：缺少稳定链接时必须降级
 
