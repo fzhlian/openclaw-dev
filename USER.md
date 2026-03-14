@@ -12,3 +12,4 @@
 - Review preference: when asking for a review/re-audit, expect findings-first code review rather than a high-level status recap
 - Findings-only preference: when asking to output only issues, do not append happy-path confirmations or extra positive postscript
 - Asset-inventory preference: when asking what self-developed skills/agents/workspaces exist, distinguish repo skills, publishable skill, runtime-installed skills, runtime agents, and workspace configs instead of collapsing them
+- Concision preference for inventory/explanations: answer with a short, high-signal summary first; do not expand into long layered walkthroughs unless explicitly asked
