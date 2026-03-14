@@ -47,7 +47,7 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertIn("Iran", payload["keywordPlan"]["world.bbc.com"])
 
-    def test_intake_check_confirm_includes_frequency(self) -> None:
+    def test_intake_check_confirm_includes_frequency_and_default_language(self) -> None:
         result = self.run_script(
             "intake_check.py",
             "--topic",
@@ -64,6 +64,7 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["频率"], "一次性")
+        self.assertEqual(payload["confirm"]["输出语言"], "中文")
 
     def test_filter_results_keeps_same_title_across_domains(self) -> None:
         input_path = self.write_json(
