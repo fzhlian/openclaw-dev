@@ -244,6 +244,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 输出包含 `## 摘要总览`、`## 文章清单`、`## 检索参数`、`## 局限与建议`
 - 第一条因缺失 `publishedAt`，应显示“时间未标注”
 - 两条结果都保留原始链接
+- 若结果缺少 `matchedDomain` / `sourceDomain` 但 `url` 存在，最终来源仍应回显 URL 提取出的主域名
 - `## 检索参数` 中包含 `频率`
 - `## 检索参数` 中包含 `输出语言`，默认显示 `中文`
 - 若渲染输入里传入 `OpenAI,Gemini` 这类逗号分隔关键词，最终 `## 检索参数` 中应回显为 `OpenAI、Gemini`

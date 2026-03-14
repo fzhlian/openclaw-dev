@@ -450,6 +450,29 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("- 频率：一次性", result.stdout)
         self.assertIn("- 输出语言：中文", result.stdout)
 
+    def test_render_digest_derives_source_domain_from_url_when_missing(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://www.openai.com/policy",
+                        "snippet": "policy summary from search result",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("来源：openai.com ｜ 时间：时间未标注", result.stdout)
+        self.assertNotIn("来源：来源未标注", result.stdout)
+
     def test_render_digest_normalizes_time_range_shorthand(self) -> None:
         input_path = self.write_json(
             {

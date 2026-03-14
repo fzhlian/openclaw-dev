@@ -89,6 +89,14 @@ def normalize_site(value: str) -> str:
     return candidate
 
 
+def normalize_host(url: str) -> str:
+    parsed = urlparse(url.strip())
+    host = (parsed.netloc or parsed.path).split("/")[0].strip().lower()
+    if host.startswith("www."):
+        host = host[4:]
+    return host
+
+
 def normalize_topics_display(value: str) -> str:
     items = split_csv(value)
     return "、".join(items)
@@ -154,13 +162,14 @@ def render_article_item(item: dict, index: int) -> list[str]:
             snippet = value
             break
     snippet = snippet or "（无摘要）"
+    url = str(item.get("url", "")).strip()
     source = (
         str(item.get("matchedDomain", "")).strip()
         or str(item.get("sourceDomain", "")).strip()
+        or normalize_host(url)
         or "来源未标注"
     )
     published_at = str(item.get("publishedAt", "")).strip() or DEFAULT_TIME_LABEL
-    url = str(item.get("url", "")).strip()
     return [
         f"{index}. **{title}**",
         f"   - 摘要：{snippet}",
