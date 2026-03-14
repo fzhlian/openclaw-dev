@@ -37,3 +37,9 @@
 - Telegram 异步开发：优先走 `codex-dev` / `codex-dev-dispatch`
 - 如果用户显式给出 `--workdir`，必须原样透传
 - 如果用户未给出 `--workdir`，默认使用 `/home/fzhlian/Code/codex-dev`
+
+## 审批稳定性
+
+- 如果 Telegram 侧已经收到 exec 审批单，在用户完成 `/approve` 前，不要重启 `openclaw-gateway.service`
+- gateway 重启会使当前待审批 ID 失效，随后 Telegram 会报 `unknown or expired approval id`
+- 需要调整 agent、workspace、gateway 配置时，优先避开待审批窗口；必要时先让用户重新触发一次命令，再处理配置变更

@@ -83,6 +83,14 @@ systemctl --user restart openclaw-gateway.service
 openclaw channels status
 ```
 
+Approval stability note:  
+审批稳定性说明：
+
+- Do not restart `openclaw-gateway.service` while a Telegram exec approval prompt is still waiting for `/approve`.
+- 当 Telegram exec 审批单还在等待 `/approve` 时，不要重启 `openclaw-gateway.service`。
+- A gateway restart invalidates the current approval id, and Telegram will return `unknown or expired approval id`.
+- gateway 重启会让当前审批 ID 失效，随后 Telegram 会返回 `unknown or expired approval id`。
+
 If `/approve` still says it needs `operator.approvals`, the current Telegram client session is missing the approval scope and should be re-paired/upgraded through the Control UI or device pairing flow.  
 如果 `/approve` 仍提示缺少 `operator.approvals`，说明当前 Telegram 客户端会话还没有审批 scope，需要通过 Control UI 或设备配对流程重新配对/升级权限。
 

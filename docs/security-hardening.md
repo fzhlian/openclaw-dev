@@ -122,6 +122,8 @@ When this must be revisited:
 - Git remote sync capability was intentionally preserved.
 - Telegram elevated execution is no longer default-permissive, but it is still available within the tightened approvals model.
 - `codex-dev-worker` now supports loading Telegram token from `~/.openclaw/.env`.
+- Telegram-side exec approvals are operationally sensitive to gateway restarts. If a prompt is waiting for `/approve`, restarting `openclaw-gateway.service` invalidates that approval id.
+- GitHub CLI operations that create releases may need the `workflow` scope in addition to `repo`; verify with `gh auth status -h github.com` in the same runtime context that will execute the command.
 
 补充说明：
 
@@ -129,6 +131,8 @@ When this must be revisited:
 - Telegram 的 elevated 执行已不再是默认宽放行，但仍保留在收紧后的 approvals 模型里。
 - Telegram 现在可以作为执行审批客户端使用，但默认仍建议只在私聊里审批。
 - `codex-dev-worker` 现在支持从 `~/.openclaw/.env` 加载 Telegram token。
+- Telegram 侧 exec 审批对 gateway 重启比较敏感：如果审批单还在等待 `/approve`，此时重启 `openclaw-gateway.service` 会让当前审批 ID 失效。
+- 需要创建 GitHub Release 时，GitHub CLI 可能除了 `repo` 之外还需要 `workflow` scope；应在实际执行命令的同一运行环境里用 `gh auth status -h github.com` 核对 scope。
 
 ## Next Review Triggers | 下次复审触发条件
 
