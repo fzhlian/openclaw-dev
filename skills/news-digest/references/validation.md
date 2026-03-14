@@ -4,10 +4,11 @@
 
 ## 目标
 
-确认以下 2 个环节都能正常工作：
+确认以下 3 个环节都能正常工作：
 
 1. 需求不完整时，先生成缺项追问与参数确认块
 2. 参数确认后，能按站点生成可执行的查询列表
+3. 检索候选结果进入摘要前，能按目标域名过滤并完成基础去重
 
 ## 验证 1：需求采集脚本
 
@@ -78,11 +79,59 @@ python3 skills/news-digest/scripts/build_query.py \
 - `keywordPlan` 按站点列出实际使用的关键词
 - 英文站点可看到 `corruption`、`Iran`、`war`、`AI` 等英文化词项
 
+## 验证 3：结果过滤脚本
+
+先准备一个最小样例文件 `sample-results.json`：
+
+```json
+[
+  {
+    "title": "Iran conflict update",
+    "url": "https://www.bbc.com/news/world-1",
+    "snippet": "..."
+  },
+  {
+    "title": "Iran conflict update",
+    "url": "https://bbc.com/news/world-1?utm_source=test",
+    "snippet": "duplicate url"
+  },
+  {
+    "title": "AI policy brief",
+    "url": "https://subdomain.nytimes.com/2026/ai-policy",
+    "snippet": "..."
+  },
+  {
+    "title": "Offsite mirror",
+    "url": "https://example.com/mirror-story",
+    "snippet": "should drop"
+  }
+]
+```
+
+执行：
+
+```bash
+python3 skills/news-digest/scripts/filter_results.py \
+  --input sample-results.json \
+  --site "bbc.com,nytimes.com" \
+  --keep-dropped
+```
+
+预期：
+
+- `summary.input` 为 `4`
+- `summary.kept` 为 `2`
+- `summary.dropped` 为 `2`
+- `bbc.com` 主域与子域结果都能保留
+- 重复 URL 会被丢弃
+- 不在目标域名内的结果会被丢弃
+
 ## 回归检查
 
 修改 `SKILL.md` 后，再检查以下约束仍成立：
 
 1. 未确认参数前，不直接进入检索
 2. `--expand` / `--auto-english` 只在必要时显式开启
-3. 结果不足时，先放宽时间范围，再扩词，再英文化，最后才放宽站点
-4. 最终输出仍要求逐条附链接，并明确局限
+3. 查询生成后，可先对候选结果做域名过滤与去重，再进入摘要
+4. 结果不足时，先放宽时间范围，再扩词，再英文化，最后才放宽站点
+5. 最终输出仍要求逐条附链接，并明确局限
