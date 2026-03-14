@@ -15,6 +15,7 @@ GROUPED_OUTPUT_MODE = "按主题分组+逐条"
 FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 DEFAULT_LANGUAGE = "中文"
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
+SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 
 
 def load_payload(path: str) -> dict:
@@ -31,7 +32,12 @@ def render_overview(results: list[dict], max_items: int) -> list[str]:
     for item in results[:max_items]:
         title = str(item.get("title", "")).strip()
         source = str(item.get("matchedDomain", "")).strip() or str(item.get("sourceDomain", "")).strip()
-        snippet = str(item.get("snippet", "")).strip()
+        snippet = ""
+        for key in SUMMARY_KEYS:
+            value = str(item.get(key, "")).strip()
+            if value:
+                snippet = value
+                break
         summary = snippet[:80].rstrip("，、；： ") if snippet else "暂无摘要信息"
 
         if title:
@@ -60,7 +66,13 @@ def pick_topic(item: dict) -> str:
 
 def render_article_item(item: dict, index: int) -> list[str]:
     title = str(item.get("title", "未命名条目")).strip() or "未命名条目"
-    snippet = str(item.get("snippet", "")).strip() or "（无摘要）"
+    snippet = ""
+    for key in SUMMARY_KEYS:
+        value = str(item.get(key, "")).strip()
+        if value:
+            snippet = value
+            break
+    snippet = snippet or "（无摘要）"
     source = (
         str(item.get("matchedDomain", "")).strip()
         or str(item.get("sourceDomain", "")).strip()

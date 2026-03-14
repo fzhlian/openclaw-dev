@@ -64,12 +64,14 @@ python3 skills/news-digest/scripts/build_query.py \
   {
     "title": "OpenAI policy update",
     "url": "https://openai.com/index/policy-update",
-    "description": "policy summary from search result"
+    "description": "policy summary from search result",
+    "snippetZh": "OpenAI 发布了新的政策更新摘要"
   },
   {
     "title": "OpenAI roadmap note",
     "url": "https://openai.com/index/roadmap",
     "summary": "roadmap summary",
+    "summaryZh": "OpenAI 路线图更新聚焦后续产品方向",
     "published_at": "2026-03-14",
     "domain": "openai.com"
   },
@@ -175,12 +177,12 @@ python3 skills/news-digest/scripts/render_digest.py \
 
 ## 文章清单
 1. **OpenAI policy update**
-   - 摘要：policy summary from search result
+   - 摘要：OpenAI 发布了新的政策更新摘要
    - 来源：openai.com ｜ 时间：时间未标注
    - 链接：https://openai.com/index/policy-update
 
 2. **OpenAI roadmap note**
-   - 摘要：roadmap summary
+   - 摘要：OpenAI 路线图更新聚焦后续产品方向
    - 来源：openai.com ｜ 时间：2026-03-14
    - 链接：https://openai.com/index/roadmap
 

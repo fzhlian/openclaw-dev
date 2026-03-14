@@ -160,6 +160,33 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("- 频率：一次性", result.stdout)
         self.assertIn("- 输出语言：中文", result.stdout)
 
+    def test_render_digest_prefers_chinese_summary_fields(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "snippetZh": "OpenAI 发布了新的政策更新摘要",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--frequency",
+            "一次性",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("OpenAI 发布了新的政策更新摘要", result.stdout)
+        self.assertNotIn("policy summary from search result", result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

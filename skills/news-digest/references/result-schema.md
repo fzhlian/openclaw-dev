@@ -11,6 +11,7 @@
   "title": "文章标题",
   "url": "https://example.com/post",
   "snippet": "搜索摘要或抓取后的核心片段",
+  "snippetZh": "供最终中文输出使用的摘要",
   "publishedAt": "2026-03-14",
   "sourceDomain": "example.com"
 }
@@ -21,6 +22,7 @@
 - `title`：必填；用于最终输出与标题去重
 - `url`：必填；用于域名校验、链接输出与 URL 去重
 - `snippet`：建议提供；作为摘要阶段的基础材料
+- `snippetZh` / `summaryZh`：可选但推荐；若最终输出语言是中文，优先使用这些字段
 - `publishedAt`：可缺失；缺失时不要编造，最终输出标注“时间未标注”
 - `sourceDomain`：建议提供；缺失时可由 URL 提取主域名
 
@@ -30,9 +32,10 @@
 
 1. 丢弃明显缺少 `title` 或 `url` 的条目，或接受其被过滤脚本丢弃
 2. 将不同搜索源中的摘要字段（如 `description`、`summary`、`content`）统一映射到 `snippet`
-3. 将不同时间字段（如 `published_at`、`date`、`time`）统一映射到 `publishedAt`
-4. 将来源字段（如 `domain`、`site`、`source`）统一映射到 `sourceDomain`
-5. 若没有 `sourceDomain`，从 `url` 解析主域名
+3. 若上游已经完成中文摘要整理，可额外提供 `snippetZh` 或 `summaryZh`
+4. 将不同时间字段（如 `published_at`、`date`、`time`）统一映射到 `publishedAt`
+5. 将来源字段（如 `domain`、`site`、`source`）统一映射到 `sourceDomain`
+6. 若没有 `sourceDomain`，从 `url` 解析主域名
 
 ## 过滤后结果
 
@@ -92,7 +95,7 @@
 最终逐条输出时，优先按以下映射：
 
 - 标题：`title`
-- 摘要：基于 `snippet` 与页面正文提炼，不编造超出来源的信息
+- 摘要：优先 `snippetZh` / `summaryZh`，否则退回 `snippet`
 - 来源：优先 `matchedDomain`，否则 `sourceDomain`
 - 时间：`publishedAt`，缺失则写“时间未标注”
 - 链接：`url`

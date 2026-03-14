@@ -52,12 +52,14 @@
     "title": "OpenAI policy update",
     "url": "https://openai.com/index/policy-update",
     "snippet": "policy summary from search result",
+    "snippetZh": "OpenAI 发布了新的政策更新摘要",
     "sourceDomain": "openai.com"
   },
   {
     "title": "OpenAI roadmap note",
     "url": "https://openai.com/index/roadmap",
     "snippet": "roadmap summary",
+    "snippetZh": "OpenAI 路线图更新聚焦后续产品方向",
     "publishedAt": "2026-03-14",
     "sourceDomain": "openai.com"
   },
@@ -73,6 +75,7 @@
 归一化规则：
 
 - `description` / `summary` / `content` -> `snippet`
+- 若已整理中文摘要，则补充 `snippetZh`
 - `published_at` -> `publishedAt`
 - `domain` -> `sourceDomain`
 - 若没有 `sourceDomain`，则从 `url` 自动提取主域名
@@ -140,12 +143,12 @@ python3 skills/news-digest/scripts/filter_results.py \
 
 ```markdown
 1. **OpenAI policy update**
-   - 摘要：policy summary from search result
+   - 摘要：OpenAI 发布了新的政策更新摘要
    - 来源：openai.com ｜ 时间：时间未标注
    - 链接：https://openai.com/index/policy-update
 
 2. **OpenAI roadmap note**
-   - 摘要：roadmap summary
+   - 摘要：OpenAI 路线图更新聚焦后续产品方向
    - 来源：openai.com ｜ 时间：2026-03-14
    - 链接：https://openai.com/index/roadmap
 ```
