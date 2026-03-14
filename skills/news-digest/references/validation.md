@@ -202,6 +202,49 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 两条结果都保留原始链接
 - 输出结构与 `SKILL.md` 中的模板保持一致
 
+### 按主题分组模式
+
+准备一个最小样例文件 `sample-grouped-results.json`：
+
+```json
+{
+  "results": [
+    {
+      "title": "OpenAI policy update",
+      "url": "https://openai.com/index/policy-update",
+      "snippet": "policy summary from search result",
+      "matchedDomain": "openai.com",
+      "topic": "OpenAI"
+    },
+    {
+      "title": "Gemini roadmap note",
+      "url": "https://blog.google/technology/ai/gemini-roadmap",
+      "snippet": "roadmap summary",
+      "matchedDomain": "blog.google",
+      "topic": "Gemini"
+    }
+  ]
+}
+```
+
+执行：
+
+```bash
+python3 skills/news-digest/scripts/render_digest.py \
+  --input sample-grouped-results.json \
+  --keywords "OpenAI,Gemini" \
+  --sites "openai.com,blog.google" \
+  --time-range "最近 7 天" \
+  --limit 2 \
+  --output-mode "按主题分组+逐条"
+```
+
+预期：
+
+- `## 文章清单` 下按 `### OpenAI`、`### Gemini` 分组输出
+- 每个分组内仍保留逐条摘要、来源、时间、链接
+- `## 检索参数` 中显示本次 `输出模式`
+
 ## 验证 6：端到端最小闭环
 
 可参考 `references/end-to-end-example.md`，顺序执行：

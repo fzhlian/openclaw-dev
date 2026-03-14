@@ -11,6 +11,9 @@ from pathlib import Path
 DEFAULT_TIME_LABEL = "时间未标注"
 DEFAULT_LIMITATIONS = "来源受限、时间缺失或覆盖不足时，结论仅基于当前检索结果。"
 DEFAULT_NEXT_STEP = "如需更高覆盖，可放宽时间范围、补充来源或显式开启扩词。"
+GROUPED_OUTPUT_MODE = "按主题分组+逐条"
+FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
+TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 
 
 def load_payload(path: str) -> dict:
@@ -46,7 +49,34 @@ def validate_results(results: list[dict]) -> None:
             raise ValueError(f"第 {index} 条结果缺少 title，不能渲染最终摘要")
 
 
-def render_articles(results: list[dict]) -> list[str]:
+def pick_topic(item: dict) -> str:
+    for key in TOPIC_KEYS:
+        value = str(item.get(key, "")).strip()
+        if value:
+            return value
+    return "未分组主题"
+
+
+def render_article_item(item: dict, index: int) -> list[str]:
+    title = str(item.get("title", "未命名条目")).strip() or "未命名条目"
+    snippet = str(item.get("snippet", "")).strip() or "（无摘要）"
+    source = (
+        str(item.get("matchedDomain", "")).strip()
+        or str(item.get("sourceDomain", "")).strip()
+        or "来源未标注"
+    )
+    published_at = str(item.get("publishedAt", "")).strip() or DEFAULT_TIME_LABEL
+    url = str(item.get("url", "")).strip()
+    return [
+        f"{index}. **{title}**",
+        f"   - 摘要：{snippet}",
+        f"   - 来源：{source} ｜ 时间：{published_at}",
+        f"   - 链接：{url}",
+    ]
+
+
+
+def render_articles(results: list[dict], output_mode: str) -> list[str]:
     lines: list[str] = ["## 文章清单"]
     if not results:
         lines.append("- 暂无可输出结果")
@@ -54,21 +84,31 @@ def render_articles(results: list[dict]) -> list[str]:
 
     validate_results(results)
 
-    for index, item in enumerate(results, start=1):
-        title = str(item.get("title", "未命名条目")).strip() or "未命名条目"
-        snippet = str(item.get("snippet", "")).strip() or "（无摘要）"
-        source = (
-            str(item.get("matchedDomain", "")).strip()
-            or str(item.get("sourceDomain", "")).strip()
-            or "来源未标注"
-        )
-        published_at = str(item.get("publishedAt", "")).strip() or DEFAULT_TIME_LABEL
-        url = str(item.get("url", "")).strip()
+    if output_mode == GROUPED_OUTPUT_MODE:
+        groups: dict[str, list[dict]] = {}
+        order: list[str] = []
+        for item in results:
+            topic = pick_topic(item)
+            if topic not in groups:
+                groups[topic] = []
+                order.append(topic)
+            groups[topic].append(item)
 
-        lines.append(f"{index}. **{title}**")
-        lines.append(f"   - 摘要：{snippet}")
-        lines.append(f"   - 来源：{source} ｜ 时间：{published_at}")
-        lines.append(f"   - 链接：{url}")
+        for topic in order:
+            lines.append(f"### {topic}")
+            for index, item in enumerate(groups[topic], start=1):
+                lines.extend(render_article_item(item, index))
+                lines.append("")
+            if lines[-1] == "":
+                lines.pop()
+            lines.append("")
+
+        if lines[-1] == "":
+            lines.pop()
+        return lines
+
+    for index, item in enumerate(results, start=1):
+        lines.extend(render_article_item(item, index))
         lines.append("")
 
     if lines[-1] == "":
@@ -83,6 +123,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
         f"- 网站：{args.sites or '（未提供）'}",
         f"- 时间范围：{args.time_range or '（未提供）'}",
         f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",
+        f"- 输出模式：{args.output_mode or FLAT_OUTPUT_MODE}",
     ]
 
 
@@ -99,7 +140,7 @@ def build_markdown(payload: dict, args: argparse.Namespace) -> str:
     lines: list[str] = ["## 摘要总览"]
     lines.extend(render_overview(results, max_items=args.overview_limit))
     lines.append("")
-    lines.extend(render_articles(results))
+    lines.extend(render_articles(results, output_mode=args.output_mode))
     lines.append("")
     lines.extend(render_parameters(args))
     lines.append("")
@@ -114,6 +155,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sites", default="", help="目标站点，展示在参数区")
     parser.add_argument("--time-range", default="", help="时间范围，展示在参数区")
     parser.add_argument("--limit", type=int, help="结果数，展示在参数区")
+    parser.add_argument("--output-mode", default=FLAT_OUTPUT_MODE, help="输出模式；支持平铺或按主题分组")
     parser.add_argument("--overview-limit", type=int, default=3, help="摘要总览条数，默认 3")
     parser.add_argument("--limitations", default=DEFAULT_LIMITATIONS, help="局限说明")
     parser.add_argument("--next-step", default=DEFAULT_NEXT_STEP, help="下一步建议")
