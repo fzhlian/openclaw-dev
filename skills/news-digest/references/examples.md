@@ -37,3 +37,49 @@
 - 预期输出：
   - 先总结技术趋势
   - 再列出版本更新、文档变更、实践文章
+
+## 用例 4：国际时政跟踪（默认清单）
+
+- 场景：按固定站点和关键词每日追踪国际新闻
+- 输入：
+  - 关键词：`贪官`、`伊朗`、`任命`、`战争`、`ai`
+  - 网站：`bbc.com`、`rfi.fr`、`nytimes.com`、`dw.com`
+  - 时间范围：最近 1 天
+  - 返回条数：12
+- 预期输出：
+  - 先给当日核心动态摘要
+  - 再按主题归类给出逐条文章清单（含链接与时间）
+
+## build_query.py 示例
+
+### 命令行快速生成
+
+```bash
+python3 scripts/build_query.py \
+  -k "OpenAI,GPT-5" \
+  -s "openai.com,https://github.com/openai/openai-python" \
+  -x "招聘,广告"
+```
+
+### 文件输入 + JSON 输出
+
+`keywords.txt`:
+
+```text
+OpenAI
+GPT-5
+```
+
+`sites.txt`:
+
+```text
+openai.com
+github.com
+```
+
+```bash
+python3 scripts/build_query.py \
+  --keyword-file keywords.txt \
+  --site-file sites.txt \
+  --format json
+```
