@@ -263,6 +263,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 两条结果都保留原始链接
 - 若结果缺少 `matchedDomain` / `sourceDomain` 但 `url` 存在，最终来源仍应回显 URL 提取出的主域名
 - 若结果里的 `matchedDomain` / `sourceDomain` 自身不是规范主域名格式（如大写、带 `www.`），最终来源显示也应先归一化为主域名
+- 若结果 URL 或 `sourceDomain` 仅多了默认端口（如 `:80` / `:443`），最终来源显示也不应带端口
 - 上述来源回填规则同时适用于 `## 摘要总览` 与 `## 文章清单`
 - `## 检索参数` 中包含 `频率`
 - `## 检索参数` 中包含 `输出语言`，默认显示 `中文`
