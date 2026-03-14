@@ -120,6 +120,10 @@ def normalize_frequency(value: str) -> str:
     return FREQUENCY_ALIASES.get(compact, FREQUENCY_ALIASES.get(text, text))
 
 
+def normalize_language(value: str) -> str:
+    return value.strip().strip(PARAM_EDGE_PUNCTUATION) or DEFAULT_LANGUAGE
+
+
 def split_csv(value: str) -> list[str]:
     items: list[str] = []
     normalized = (
@@ -322,7 +326,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
     keywords = normalize_topics_display(args.keywords)
     sites = normalize_sites_display(args.sites)
     limit = args.limit if args.limit is not None else DEFAULT_LIMIT
-    language = args.language.strip() or DEFAULT_LANGUAGE
+    language = normalize_language(args.language)
     return [
         "## 检索参数",
         f"- 关键词：{keywords or '（未提供）'}",
@@ -456,7 +460,7 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
-    normalized_language = args.language.strip() or DEFAULT_LANGUAGE
+    normalized_language = normalize_language(args.language)
     if normalized_language != SUPPORTED_LANGUAGE:
         print(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}", file=sys.stderr)
         return 1

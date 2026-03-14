@@ -188,6 +188,10 @@ def normalize_time_range(value: str) -> str:
     return TIME_RANGE_ALIASES.get(compact, text)
 
 
+def normalize_language(value: str) -> str:
+    return value.strip().strip(PARAM_EDGE_PUNCTUATION) or DEFAULT_LANGUAGE
+
+
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = dedupe_keywords(split_csv(args.topic))
     sites = list(dict.fromkeys(normalize_site(site) for site in split_csv(args.site)))
@@ -198,7 +202,7 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
         "frequency": normalize_frequency(args.frequency),
         "limit": args.limit,
         "output_mode": normalize_output_mode(args.output_mode),
-        "language": args.language.strip() or DEFAULT_LANGUAGE,
+        "language": normalize_language(args.language),
         "defaults_applied": {
             "time_range": not bool(args.time_range.strip()),
             "output_mode": not bool(args.output_mode.strip()),
@@ -292,7 +296,7 @@ def main() -> int:
         raise SystemExit(
             f"--output-mode 当前仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}"
         )
-    if (args.language.strip() or DEFAULT_LANGUAGE) != SUPPORTED_LANGUAGE:
+    if normalize_language(args.language) != SUPPORTED_LANGUAGE:
         raise SystemExit(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}")
 
     params = normalize_params(args)
