@@ -15,6 +15,7 @@ GROUPED_OUTPUT_MODE = "按主题分组+逐条"
 FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
+SUPPORTED_OUTPUT_MODES = (FLAT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 
@@ -223,7 +224,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--time-range", default="", help="时间范围，展示在参数区")
     parser.add_argument("--frequency", default="", help="更新频率，展示在参数区")
     parser.add_argument("--limit", type=int, help="结果数，展示在参数区")
-    parser.add_argument("--output-mode", default=FLAT_OUTPUT_MODE, help="输出模式；支持平铺或按主题分组")
+    parser.add_argument(
+        "--output-mode",
+        default=FLAT_OUTPUT_MODE,
+        help=f"输出模式，仅支持 {FLAT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}",
+    )
     parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，当前仅支持中文")
     parser.add_argument("--overview-limit", type=int, default=3, help="摘要总览条数，默认 3")
     parser.add_argument("--limitations", default=DEFAULT_LIMITATIONS, help="局限与建议中的局限说明")
@@ -235,6 +240,12 @@ def main() -> int:
     args = parse_args()
     if args.overview_limit < 1:
         print("--overview-limit 必须 >= 1", file=sys.stderr)
+        return 1
+    if args.output_mode.strip() not in SUPPORTED_OUTPUT_MODES:
+        print(
+            f"--output-mode 当前仅支持 {FLAT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}",
+            file=sys.stderr,
+        )
         return 1
     if (args.language.strip() or DEFAULT_LANGUAGE) != SUPPORTED_LANGUAGE:
         print(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}", file=sys.stderr)

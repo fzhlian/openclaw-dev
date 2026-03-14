@@ -79,6 +79,22 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--language 当前仅支持 中文", result.stderr)
 
+    def test_intake_check_rejects_invalid_output_mode(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--output-mode",
+            "乱填模式",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(
+            "--output-mode 当前仅支持 摘要总览 + 逐条清单 / 按主题分组+逐条",
+            result.stderr,
+        )
+
     def test_filter_results_keeps_same_title_across_domains(self) -> None:
         input_path = self.write_json(
             [
@@ -127,6 +143,25 @@ class NewsDigestScriptTests(unittest.TestCase):
         result = self.run_script("render_digest.py", "--input", input_path, "--language", "English")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--language 当前仅支持 中文", result.stderr)
+
+    def test_render_digest_rejects_invalid_output_mode(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                    }
+                ]
+            }
+        )
+        result = self.run_script("render_digest.py", "--input", input_path, "--output-mode", "乱填模式")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(
+            "--output-mode 当前仅支持 摘要总览 + 逐条清单 / 按主题分组+逐条",
+            result.stderr,
+        )
 
     def test_render_digest_degrades_when_no_results(self) -> None:
         input_path = self.write_json(

@@ -11,8 +11,10 @@ DEFAULT_LIMIT = 5
 MAX_LIMIT = 20
 DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_OUTPUT_MODE = "摘要总览 + 逐条清单"
+GROUPED_OUTPUT_MODE = "按主题分组+逐条"
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
+SUPPORTED_OUTPUT_MODES = (DEFAULT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -110,7 +112,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--time-range", default="", help="时间范围，如 最近 24 小时 / 7 天 / 30 天")
     parser.add_argument("--frequency", default="", help="更新频率，如 一次性 / 每日 / 每周")
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="结果条数，默认 5")
-    parser.add_argument("--output-mode", default="", help="输出模式")
+    parser.add_argument(
+        "--output-mode",
+        default="",
+        help=f"输出模式，仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}",
+    )
     parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，当前仅支持中文")
     parser.add_argument("--format", choices=["text", "json"], default="text", help="输出格式")
     return parser.parse_args()
@@ -122,6 +128,10 @@ def main() -> int:
         raise SystemExit("--limit 必须 >= 1")
     if args.limit > MAX_LIMIT:
         raise SystemExit(f"--limit 必须 <= {MAX_LIMIT}")
+    if args.output_mode.strip() and args.output_mode.strip() not in SUPPORTED_OUTPUT_MODES:
+        raise SystemExit(
+            f"--output-mode 当前仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}"
+        )
     if (args.language.strip() or DEFAULT_LANGUAGE) != SUPPORTED_LANGUAGE:
         raise SystemExit(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}")
 

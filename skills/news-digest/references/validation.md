@@ -44,6 +44,7 @@ python3 skills/news-digest/scripts/intake_check.py \
 - `missingQuestions` 为空
 - `confirm` 中包含关键词、网站、时间范围、频率、结果数、输出模式、输出语言
 - 若本轮任务语义是“执行一次/跑一遍”，确认块里也必须显式回显 `频率：一次性`
+- 若用户传入不支持的 `--output-mode`，应直接报错，而不是静默回退到默认模式
 - 若用户传入非中文 `--language`，应直接报错，而不是继续假装支持其他输出语言
 - 不应再要求补问
 
@@ -204,6 +205,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 两条结果都保留原始链接
 - `## 检索参数` 中包含 `频率`
 - `## 检索参数` 中包含 `输出语言`，默认显示 `中文`
+- 若传入不支持的 `--output-mode`，应直接报错，而不是继续输出平铺模板
 - 若传入非中文 `--language`，应直接报错，而不是继续输出中文模板
 - 输出结构与 `SKILL.md` 中的模板保持一致
 
