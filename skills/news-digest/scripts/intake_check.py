@@ -40,6 +40,19 @@ TIME_RANGE_ALIASES = {
     "14d": "最近 14 天",
     "30d": "最近 30 天",
 }
+SITE_ALIASES = {
+    "bbc": "bbc.com",
+    "bbc news": "bbc.com",
+    "rfi": "rfi.fr",
+    "dw": "dw.com",
+    "deutsche welle": "dw.com",
+    "nyt": "nytimes.com",
+    "new york times": "nytimes.com",
+    "纽约时报": "nytimes.com",
+    "紐約時報": "nytimes.com",
+    "华尔街见闻": "wallstreetcn.com",
+    "華爾街見聞": "wallstreetcn.com",
+}
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -62,6 +75,9 @@ def normalize_site(site: str) -> str:
         candidate = candidate[4:]
     if not candidate:
         raise ValueError(f"无效站点: {site}")
+    alias = SITE_ALIASES.get(candidate)
+    if alias:
+        return alias
     if "." not in candidate:
         raise ValueError(f"站点需使用域名，如 bbc.com；收到: {site}")
     return candidate

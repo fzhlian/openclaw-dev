@@ -190,6 +190,23 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["网站"], "openai.com")
 
+    def test_intake_check_normalizes_common_media_aliases_to_domains(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "BBC,RFI,纽约时报,DW,华尔街见闻",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(
+            payload["confirm"]["网站"],
+            "bbc.com、rfi.fr、nytimes.com、dw.com、wallstreetcn.com",
+        )
+
     def test_intake_check_splits_fullwidth_commas(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -211,10 +228,21 @@ class NewsDigestScriptTests(unittest.TestCase):
             "--topic",
             "OpenAI",
             "--site",
-            "BBC",
+            "未知媒体",
         )
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("站点需使用域名，如 bbc.com；收到: BBC", result.stderr)
+        self.assertIn("站点需使用域名，如 bbc.com；收到: 未知媒体", result.stderr)
+
+    def test_intake_check_rejects_unknown_media_alias(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "央视新闻",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("站点需使用域名，如 bbc.com；收到: 央视新闻", result.stderr)
 
     def test_filter_results_keeps_same_title_across_domains(self) -> None:
         input_path = self.write_json(
