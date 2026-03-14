@@ -82,6 +82,19 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["频率"], "一次性")
 
+    def test_intake_check_rejects_unsupported_frequency(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--frequency",
+            "每月",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--frequency 当前仅支持 一次性 / 每日 / 每周", result.stderr)
+
     def test_intake_check_rejects_non_chinese_output_language(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -317,6 +330,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 频率：一次性", result.stdout)
+
+    def test_render_digest_rejects_unsupported_frequency(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--frequency",
+            "每月",
+            "--overview-limit",
+            "1",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("--frequency 当前仅支持 一次性 / 每日 / 每周", result.stderr)
 
 
 if __name__ == "__main__":

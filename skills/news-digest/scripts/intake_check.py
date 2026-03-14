@@ -29,6 +29,7 @@ FREQUENCY_ALIASES = {
     "每星期": "每周",
     "周报": "每周",
 }
+SUPPORTED_FREQUENCIES = ("一次性", "每日", "每周")
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -131,7 +132,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--topic", action="append", default=[], help="追踪主题，支持重复传入或逗号分隔")
     parser.add_argument("--site", action="append", default=[], help="来源站点，支持重复传入或逗号分隔")
     parser.add_argument("--time-range", default="", help="时间范围，如 最近 24 小时 / 7 天 / 30 天")
-    parser.add_argument("--frequency", default="", help="更新频率，如 一次性 / 每日 / 每周")
+    parser.add_argument(
+        "--frequency",
+        default="",
+        help="更新频率，仅支持 一次性 / 每日 / 每周（支持自然表达归一化）",
+    )
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="结果条数，默认 5")
     parser.add_argument(
         "--output-mode",
@@ -149,6 +154,9 @@ def main() -> int:
         raise SystemExit("--limit 必须 >= 1")
     if args.limit > MAX_LIMIT:
         raise SystemExit(f"--limit 必须 <= {MAX_LIMIT}")
+    normalized_frequency = normalize_frequency(args.frequency)
+    if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
+        raise SystemExit("--frequency 当前仅支持 一次性 / 每日 / 每周")
     if args.output_mode.strip() and args.output_mode.strip() not in SUPPORTED_OUTPUT_MODES:
         raise SystemExit(
             f"--output-mode 当前仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}"

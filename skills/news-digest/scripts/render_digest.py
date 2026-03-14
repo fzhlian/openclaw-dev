@@ -30,6 +30,7 @@ FREQUENCY_ALIASES = {
     "每星期": "每周",
     "周报": "每周",
 }
+SUPPORTED_FREQUENCIES = ("一次性", "每日", "每周")
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 
@@ -242,7 +243,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--keywords", default="", help="检索关键词，展示在参数区")
     parser.add_argument("--sites", default="", help="目标站点，展示在参数区")
     parser.add_argument("--time-range", default="", help="时间范围，展示在参数区")
-    parser.add_argument("--frequency", default="", help="更新频率，展示在参数区")
+    parser.add_argument(
+        "--frequency",
+        default="",
+        help="更新频率，仅支持 一次性 / 每日 / 每周（支持自然表达归一化）",
+    )
     parser.add_argument("--limit", type=int, help="结果数，展示在参数区")
     parser.add_argument(
         "--output-mode",
@@ -260,6 +265,10 @@ def main() -> int:
     args = parse_args()
     if args.overview_limit < 1:
         print("--overview-limit 必须 >= 1", file=sys.stderr)
+        return 1
+    normalized_frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
+    if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
+        print("--frequency 当前仅支持 一次性 / 每日 / 每周", file=sys.stderr)
         return 1
     if args.output_mode.strip() not in SUPPORTED_OUTPUT_MODES:
         print(
