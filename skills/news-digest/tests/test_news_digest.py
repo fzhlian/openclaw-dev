@@ -693,6 +693,46 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("来源：openai.com ｜ 时间：时间未标注", result.stdout)
         self.assertNotIn("来源：来源未标注", result.stdout)
 
+    def test_render_digest_enforces_limit_in_rendered_results(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    },
+                    {
+                        "title": "OpenAI roadmap note",
+                        "url": "https://openai.com/roadmap",
+                        "snippet": "roadmap summary",
+                        "matchedDomain": "openai.com",
+                    },
+                    {
+                        "title": "OpenAI pricing note",
+                        "url": "https://openai.com/pricing",
+                        "snippet": "pricing summary",
+                        "matchedDomain": "openai.com",
+                    },
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--limit",
+            "2",
+            "--overview-limit",
+            "3",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 结果数：2", result.stdout)
+        self.assertIn("1. **OpenAI policy update**", result.stdout)
+        self.assertIn("2. **OpenAI roadmap note**", result.stdout)
+        self.assertNotIn("OpenAI pricing note", result.stdout)
+
     def test_render_digest_normalizes_time_range_shorthand(self) -> None:
         input_path = self.write_json(
             {
