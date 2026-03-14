@@ -171,6 +171,7 @@ python3 skills/news-digest/scripts/filter_results.py \
 - 若结果 URL 缺少 scheme（如 `example.com/post?id=1`），归一化后的 `normalizedUrl` 也应补成合法的 `https://example.com/post?id=1`
 - 若同一链接只是在 `http://` / `https://` 协议上不同，也应视为同一链接；`normalizedUrl` 统一按 `https://` 归一化
 - 若结果 URL 仅多了默认端口（如 `:80` / `:443`），也应视为同一主域结果，不应因端口导致 `domain_mismatch`
+- 若结果 URL 主机带尾随点（如 `https://openai.com./a`），也应按同一主域处理，不应导致 `domain_mismatch`
 - 不在目标域名内的结果会被丢弃
 - 若 `--site` 使用全角逗号 `，`、中文顿号 `、`、中文分号 `；`、英文分号 `;`、竖线 `|`、全角斜杠 `／`，或带空格斜杠 ` / ` 分隔多个域名，仍能正确拆分并过滤
 - 若 `--input` 指向目录、不可读路径或坏文件，不应抛 Python traceback，而应直接输出明确错误
@@ -266,6 +267,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 若结果缺少 `matchedDomain` / `sourceDomain` 但 `url` 存在，最终来源仍应回显 URL 提取出的主域名
 - 若结果里的 `matchedDomain` / `sourceDomain` 自身不是规范主域名格式（如大写、带 `www.`），最终来源显示也应先归一化为主域名
 - 若结果 URL 或 `sourceDomain` 仅多了默认端口（如 `:80` / `:443`），最终来源显示也不应带端口
+- 若结果 URL 主机带尾随点（如 `https://openai.com./a`），最终来源显示也不应带尾点
 - 上述来源回填规则同时适用于 `## 摘要总览` 与 `## 文章清单`
 - `## 检索参数` 中包含 `频率`
 - `## 检索参数` 中包含 `输出语言`，默认显示 `中文`

@@ -156,7 +156,7 @@ def normalize_site(value: str) -> str:
 def normalize_host(url: str) -> str:
     raw = url.strip()
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    host = (parsed.hostname or "").strip().lower()
+    host = (parsed.hostname or "").strip().lower().rstrip(".,，。;；:：!！?？")
     if host.startswith("www."):
         host = host[4:]
     return host

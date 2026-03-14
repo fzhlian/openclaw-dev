@@ -937,6 +937,24 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["summary"]["kept"], 2)
         self.assertEqual(payload["sites"], ["openai.com", "blog.google"])
 
+    def test_filter_results_accepts_urls_with_trailing_dot_hosts(self) -> None:
+        input_path = self.write_json(
+            [
+                {"title": "One", "url": "https://openai.com./a", "snippet": "1"},
+            ]
+        )
+        result = self.run_script(
+            "filter_results.py",
+            "--input",
+            input_path,
+            "--site",
+            "openai.com",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["kept"], 1)
+        self.assertEqual(payload["results"][0]["normalizedUrl"], "https://openai.com/a")
+
     def test_filter_results_deduplicates_sites_after_normalization(self) -> None:
         input_path = self.write_json(
             [{"title": "BBC One", "url": "https://www.bbc.com/news/a", "snippet": "1"}]
@@ -1763,6 +1781,30 @@ class NewsDigestScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 网站：openai.com、blog.google", result.stdout)
+
+    def test_render_digest_derives_source_domain_from_trailing_dot_url(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://www.openai.com./policy",
+                        "snippet": "policy summary from search result",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("OpenAI policy update（来源：openai.com）：policy summary from search result", result.stdout)
+        self.assertIn("来源：openai.com ｜ 时间：时间未标注", result.stdout)
+        self.assertNotIn("来源：openai.com.", result.stdout)
 
     def test_render_digest_normalizes_ideographic_commas_in_parameter_block(self) -> None:
         input_path = self.write_json(
