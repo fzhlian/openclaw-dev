@@ -226,7 +226,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--output-mode", default=FLAT_OUTPUT_MODE, help="输出模式；支持平铺或按主题分组")
     parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，当前仅支持中文")
     parser.add_argument("--overview-limit", type=int, default=3, help="摘要总览条数，默认 3")
-    parser.add_argument("--limitations", default=DEFAULT_LIMITATIONS, help="局限说明")
+    parser.add_argument("--limitations", default=DEFAULT_LIMITATIONS, help="局限与建议中的局限说明")
     parser.add_argument("--next-step", default=DEFAULT_NEXT_STEP, help="下一步建议")
     return parser.parse_args()
 
