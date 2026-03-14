@@ -353,6 +353,22 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("--language 当前仅支持 中文", result.stderr)
 
+    def test_render_digest_defaults_blank_language_to_chinese(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                    }
+                ]
+            }
+        )
+        result = self.run_script("render_digest.py", "--input", input_path, "--language", "   ")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 输出语言：中文", result.stdout)
+
     def test_render_digest_rejects_invalid_output_mode(self) -> None:
         input_path = self.write_json(
             {

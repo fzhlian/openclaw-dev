@@ -238,6 +238,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
     keywords = normalize_topics_display(args.keywords)
     sites = normalize_sites_display(args.sites)
     limit = args.limit if args.limit is not None else DEFAULT_LIMIT
+    language = args.language.strip() or DEFAULT_LANGUAGE
     return [
         "## 检索参数",
         f"- 关键词：{keywords or '（未提供）'}",
@@ -246,7 +247,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
         f"- 频率：{frequency or '（未提供）'}",
         f"- 结果数：{limit}",
         f"- 输出模式：{output_mode}",
-        f"- 输出语言：{args.language or DEFAULT_LANGUAGE}",
+        f"- 输出语言：{language}",
     ]
 
 
@@ -369,13 +370,15 @@ def main() -> int:
             file=sys.stderr,
         )
         return 1
-    if (args.language.strip() or DEFAULT_LANGUAGE) != SUPPORTED_LANGUAGE:
+    normalized_language = args.language.strip() or DEFAULT_LANGUAGE
+    if normalized_language != SUPPORTED_LANGUAGE:
         print(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}", file=sys.stderr)
         return 1
 
     try:
         payload = load_payload(args.input)
         args.output_mode = normalized_output_mode
+        args.language = normalized_language
         print(build_markdown(payload, args))
     except (ValueError, json.JSONDecodeError) as exc:
         print(str(exc), file=sys.stderr)
