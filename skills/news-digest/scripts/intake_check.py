@@ -111,7 +111,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frequency", default="", help="更新频率，如 一次性 / 每日 / 每周")
     parser.add_argument("--limit", type=int, default=DEFAULT_LIMIT, help="结果条数，默认 5")
     parser.add_argument("--output-mode", default="", help="输出模式")
-    parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，默认中文")
+    parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，当前仅支持中文")
     parser.add_argument("--format", choices=["text", "json"], default="text", help="输出格式")
     return parser.parse_args()
 
