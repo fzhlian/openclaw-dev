@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from typing import Any
+from urllib.parse import urlparse
 
 DEFAULT_LIMIT = 5
 MAX_LIMIT = 20
@@ -44,6 +45,21 @@ def split_csv(values: list[str]) -> list[str]:
     return list(dict.fromkeys(items))
 
 
+def normalize_site(site: str) -> str:
+    candidate = site.strip()
+    if "://" in candidate:
+        parsed = urlparse(candidate)
+        candidate = parsed.netloc or parsed.path
+    candidate = candidate.split("/")[0].strip().lower()
+    if candidate.startswith("www."):
+        candidate = candidate[4:]
+    if not candidate:
+        raise ValueError(f"无效站点: {site}")
+    if "." not in candidate:
+        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {site}")
+    return candidate
+
+
 def ask_list(params: dict[str, Any]) -> list[str]:
     asks: list[str] = []
     if not params["topics"]:
@@ -80,7 +96,7 @@ def normalize_output_mode(value: str) -> str:
 
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = split_csv(args.topic)
-    sites = split_csv(args.site)
+    sites = [normalize_site(site) for site in split_csv(args.site)]
     return {
         "topics": topics,
         "sites": sites,
@@ -168,6 +184,12 @@ def main() -> int:
         raise SystemExit("--limit 必须 >= 1")
     if args.limit > MAX_LIMIT:
         raise SystemExit(f"--limit 必须 <= {MAX_LIMIT}")
+    try:
+        split_sites = split_csv(args.site)
+        for site in split_sites:
+            normalize_site(site)
+    except ValueError as exc:
+        raise SystemExit(str(exc))
     normalized_frequency = normalize_frequency(args.frequency)
     if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
         raise SystemExit("--frequency 当前仅支持 一次性 / 每日 / 每周")

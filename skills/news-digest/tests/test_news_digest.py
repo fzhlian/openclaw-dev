@@ -145,6 +145,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["输出模式"], "摘要总览 + 逐条清单")
 
+    def test_intake_check_normalizes_site_urls_to_domains(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "https://www.openai.com/index/policy",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["网站"], "openai.com")
+
+    def test_intake_check_rejects_non_domain_site(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "BBC",
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("站点需使用域名，如 bbc.com；收到: BBC", result.stderr)
+
     def test_filter_results_keeps_same_title_across_domains(self) -> None:
         input_path = self.write_json(
             [
