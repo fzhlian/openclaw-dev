@@ -59,6 +59,18 @@ def dedupe_keywords(items: list[str]) -> list[str]:
     return deduped
 
 
+def dedupe_casefold(items: list[str]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        marker = item.casefold()
+        if marker in seen:
+            continue
+        seen.add(marker)
+        deduped.append(item)
+    return deduped
+
+
 def load_list_file(path: str) -> list[str]:
     file = Path(path)
     if not file.exists():
@@ -216,7 +228,7 @@ def main() -> int:
 
     keywords = split_items(args.keyword)
     sites = split_items(args.site)
-    excludes = split_items(args.exclude)
+    excludes = dedupe_casefold(split_items(args.exclude))
 
     try:
         if args.keyword_file:
