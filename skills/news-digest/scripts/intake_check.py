@@ -33,6 +33,13 @@ FREQUENCY_ALIASES = {
     "周报": "每周",
 }
 SUPPORTED_FREQUENCIES = ("一次性", "每日", "每周")
+TIME_RANGE_ALIASES = {
+    "24h": "最近 24 小时",
+    "1d": "最近 1 天",
+    "7d": "最近 7 天",
+    "14d": "最近 14 天",
+    "30d": "最近 30 天",
+}
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -94,13 +101,21 @@ def normalize_output_mode(value: str) -> str:
     return text
 
 
+def normalize_time_range(value: str) -> str:
+    text = value.strip()
+    if not text:
+        return ""
+    compact = "".join(text.split()).lower()
+    return TIME_RANGE_ALIASES.get(compact, text)
+
+
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = split_csv(args.topic)
     sites = [normalize_site(site) for site in split_csv(args.site)]
     return {
         "topics": topics,
         "sites": sites,
-        "time_range": args.time_range.strip(),
+        "time_range": normalize_time_range(args.time_range),
         "frequency": normalize_frequency(args.frequency),
         "limit": args.limit,
         "output_mode": normalize_output_mode(args.output_mode),

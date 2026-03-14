@@ -33,6 +33,13 @@ FREQUENCY_ALIASES = {
     "周报": "每周",
 }
 SUPPORTED_FREQUENCIES = ("一次性", "每日", "每周")
+TIME_RANGE_ALIASES = {
+    "24h": "最近 24 小时",
+    "1d": "最近 1 天",
+    "7d": "最近 7 天",
+    "14d": "最近 14 天",
+    "30d": "最近 30 天",
+}
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 
@@ -47,6 +54,14 @@ def normalize_output_mode(value: str) -> str:
     if compact in GROUPED_OUTPUT_MODE_ALIASES:
         return GROUPED_OUTPUT_MODE
     return text
+
+
+def normalize_time_range(value: str) -> str:
+    text = value.strip()
+    if not text:
+        return ""
+    compact = "".join(text.split()).lower()
+    return TIME_RANGE_ALIASES.get(compact, text)
 
 
 def load_payload(path: str) -> dict:
@@ -168,11 +183,12 @@ def render_articles(results: list[dict], output_mode: str) -> list[str]:
 def render_parameters(args: argparse.Namespace) -> list[str]:
     frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
     output_mode = normalize_output_mode(args.output_mode)
+    time_range = normalize_time_range(args.time_range)
     return [
         "## 检索参数",
         f"- 关键词：{args.keywords or '（未提供）'}",
         f"- 网站：{args.sites or '（未提供）'}",
-        f"- 时间范围：{args.time_range or '（未提供）'}",
+        f"- 时间范围：{time_range or '（未提供）'}",
         f"- 频率：{frequency or '（未提供）'}",
         f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",
         f"- 输出模式：{output_mode}",

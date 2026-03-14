@@ -71,6 +71,22 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["confirm"]["频率"], "一次性")
         self.assertEqual(payload["confirm"]["输出语言"], "中文")
 
+    def test_intake_check_normalizes_time_range_shorthand(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--time-range",
+            "7d",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["时间范围"], "最近 7 天")
+
     def test_intake_check_normalizes_natural_frequency_labels(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -357,6 +373,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("OpenAI policy update（来源：openai.com）：policy summary from search result", result.stdout)
         self.assertIn("- 频率：一次性", result.stdout)
         self.assertIn("- 输出语言：中文", result.stdout)
+
+    def test_render_digest_normalizes_time_range_shorthand(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--time-range",
+            "24h",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 时间范围：最近 24 小时", result.stdout)
 
     def test_render_digest_prefers_chinese_summary_fields(self) -> None:
         input_path = self.write_json(
