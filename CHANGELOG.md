@@ -5,6 +5,18 @@ All notable changes to this project will be tracked here.
 
 ## [Unreleased] | [未发布]
 
+## [0.1.10] - 2026-03-15
+
+- Republished the community package after resolving the ClawHub path check, version-conflict retries, and temporary registry rate limiting.
+  解决 ClawHub 路径检查、版本冲突重试与临时限流后，重新发布社区包。
+
+## [0.1.3] - 2026-03-15
+
+- Republished the community package after resolving the ClawHub path check and version-conflict retry.
+  解决 ClawHub 路径检查与版本冲突重试后，重新发布社区包。
+
+## [0.1.2] - 2026-03-15
+
 - Added a minimal bilingual `CONTRIBUTING.md` for collaboration rules.  
   增加最小双语 `CONTRIBUTING.md`，明确协作规则。
 - Polished the GitHub homepage README to use repository-friendly links and commands.  
