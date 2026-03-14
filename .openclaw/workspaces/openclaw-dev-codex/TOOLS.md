@@ -20,5 +20,6 @@
 - `codex-dev-skill-inspect` 已返回 repo status、target status、target diff、target files、recent commits；默认不要再重复调用 `git diff` / `find`
 - 对“先检查当前仓库状态和 skills/news-digest 现状，再给出最小实现方案”这类请求，直接调用 `/home/fzhlian/bin/codex-dev-skill-inspect skills/news-digest`
 - 避免把上面的请求展开成 `git status --short && git diff -- skills/news-digest && find skills/news-digest ...` 之类长链
+- 如果任务是审查/review，先读目标文件或 diff，再输出 findings；不要只给实现概述
 - 普通仓库任务默认不要读取 `~/.openclaw` 下的 sessions/logs/agents 目录来补上下文
 - `memory_search`、`sessions_list`、`sessions_history` 仅用于显式日志/历史排查
