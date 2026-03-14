@@ -160,6 +160,48 @@ python3 skills/news-digest/scripts/filter_results.py \
 - 摘要应只基于归一化并过滤后的结果，不直接混用原始搜索字段
 - 可参考 `references/workflow-example.md` 对照“原始字段 -> 标准字段 -> 过滤后输出”的完整样例
 
+## 验证 5：最终摘要渲染
+
+准备一个最小样例文件 `sample-filtered-results.json`：
+
+```json
+{
+  "results": [
+    {
+      "title": "OpenAI policy update",
+      "url": "https://openai.com/index/policy-update",
+      "snippet": "policy summary from search result",
+      "matchedDomain": "openai.com"
+    },
+    {
+      "title": "OpenAI roadmap note",
+      "url": "https://openai.com/index/roadmap",
+      "snippet": "roadmap summary",
+      "publishedAt": "2026-03-14",
+      "matchedDomain": "openai.com"
+    }
+  ]
+}
+```
+
+执行：
+
+```bash
+python3 skills/news-digest/scripts/render_digest.py \
+  --input sample-filtered-results.json \
+  --keywords "OpenAI" \
+  --sites "openai.com" \
+  --time-range "最近 7 天" \
+  --limit 2
+```
+
+预期：
+
+- 输出包含 `## 摘要总览`、`## 文章清单`、`## 检索参数`、`## 局限与建议`
+- 第一条因缺失 `publishedAt`，应显示“时间未标注”
+- 两条结果都保留原始链接
+- 输出结构与 `SKILL.md` 中的模板保持一致
+
 ## 回归检查
 
 修改 `SKILL.md` 后，再检查以下约束仍成立：
