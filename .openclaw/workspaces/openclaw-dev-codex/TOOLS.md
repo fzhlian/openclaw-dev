@@ -22,6 +22,7 @@
 - 避免把上面的请求展开成 `git status --short && git diff -- skills/news-digest && find skills/news-digest ...` 之类长链
 - 对“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”这类请求，直接调用 `/home/fzhlian/bin/codex-dev-assets-inspect`
 - 这类资产盘点不要只看 `skills/`；必须区分仓库内 skill、可发布 `skill/`、运行态已安装 skill、运行态 agent、以及 workspace 提示配置
+- 如果目标是把资产盘点整理成仓库文档，也先从 `/home/fzhlian/bin/codex-dev-assets-inspect` 开始；不要先拼 `git status && find . && find .openclaw/workspaces ...`
 - 如果任务是审查/review，先读目标文件或 diff，再输出 findings；不要只给实现概述
 - 如果用户明确要求“只输出发现的问题”，就不要在 findings 后再追加正向摘要、happy path 结果或补充事实块
 - 普通仓库任务默认不要读取 `~/.openclaw` 下的 sessions/logs/agents 目录来补上下文

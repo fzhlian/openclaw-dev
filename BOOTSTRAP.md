@@ -22,3 +22,5 @@
 14. 若用户问“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”，则直接运行 `codex-dev-assets-inspect`
 15. 对这类资产盘点问题，必须同时覆盖仓库内 `skills/`、可发布 `skill/`、运行态 `~/.openclaw/skills`、`~/.openclaw/openclaw.json` 的 agent 列表，以及仓库 / 运行态 workspace 配置
 16. 对资产盘点、状态说明、规则分工这类解释型请求，默认先给简短结论；除非用户明确要求展开，否则不要自动写成长篇分层说明
+17. 若用户在这类解释型线程里只说“继续”，默认只补新的关键信息，不要把完整结构再讲一遍，也不要主动附带多条后续选项
+18. 若用户要把资产盘点整理成仓库文档，预检查仍应先从 `codex-dev-assets-inspect` 开始；只在需要确认落盘位置时补最小文件存在性检查
