@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+BOT_TOKEN="${TELEGRAM_BOT_TOKEN:?missing TELEGRAM_BOT_TOKEN}"
+CHAT_ID="${1:?missing chat id}"
+TEXT_FILE="${2:?missing text file}"
+
+curl -sS -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
+  -d "chat_id=${CHAT_ID}" \
+  --data-urlencode "text@${TEXT_FILE}" \
+  -d "disable_web_page_preview=true" \
+  -d "parse_mode=" >/dev/null

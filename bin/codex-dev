@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+exec /home/fzhlian/Code/codex-dev/skill/scripts/codex-dev-dispatch "$@"

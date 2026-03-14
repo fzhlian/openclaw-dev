@@ -1,0 +1,201 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SKILL_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+WORKER_BIN="${SCRIPT_DIR}/codex-dev-worker"
+JOBS_ROOT="${CODEX_DEV_JOBS_ROOT:-$HOME/.codex-dev/jobs}"
+DRY_RUN="${CODEX_DEV_DRY_RUN:-0}"
+DEFAULT_WORKDIR="${CODEX_DEV_DEFAULT_WORKDIR:-$PWD}"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  codex-dev-dispatch "task text"
+  codex-dev-dispatch --workdir /absolute/path "task text"
+  codex-dev-dispatch --file /absolute/path/to/task.txt
+  codex-dev-dispatch --dry-run "task text"
+  codex-dev-dispatch status <job-id>
+  codex-dev-dispatch show <job-id>
+  codex-dev-dispatch help
+EOF
+}
+
+job_dir() {
+  printf '%s/%s\n' "$JOBS_ROOT" "$1"
+}
+
+status_file() {
+  printf '%s/status.json\n' "$(job_dir "$1")"
+}
+
+summary_file() {
+  printf '%s/summary.txt\n' "$(job_dir "$1")"
+}
+
+read_task_from_file() {
+  local file="${1:?missing task file}"
+  if [ ! -f "$file" ]; then
+    echo "Task file not found: $file" >&2
+    exit 1
+  fi
+  cat "$file"
+}
+
+validate_workdir() {
+  local path="${1:?missing workdir}"
+  case "$path" in
+    /*) ;;
+    *)
+      echo "Workdir must be an absolute path: $path" >&2
+      exit 1
+      ;;
+  esac
+  if [ ! -d "$path" ]; then
+    echo "Workdir does not exist: $path" >&2
+    exit 1
+  fi
+}
+
+show_status() {
+  local job_id="${1:?missing job id}"
+  local file
+  file="$(status_file "$job_id")"
+  if [ ! -f "$file" ]; then
+    echo "Job status not found: $job_id" >&2
+    exit 1
+  fi
+  sed -n '1,160p' "$file"
+}
+
+show_summary() {
+  local job_id="${1:?missing job id}"
+  local file
+  file="$(summary_file "$job_id")"
+  if [ ! -f "$file" ]; then
+    echo "Job summary not found: $job_id" >&2
+    exit 1
+  fi
+  sed -n '1,200p' "$file"
+}
+
+TASK=""
+WORKDIR="$DEFAULT_WORKDIR"
+
+read_task() {
+  local task_file_arg=""
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      --file)
+        shift
+        task_file_arg="${1:-}"
+        [ -n "$task_file_arg" ] || { echo "Missing --file value." >&2; exit 1; }
+        shift
+        ;;
+      --workdir)
+        shift
+        WORKDIR="${1:-}"
+        [ -n "$WORKDIR" ] || { echo "Missing --workdir value." >&2; exit 1; }
+        validate_workdir "$WORKDIR"
+        shift
+        ;;
+      --dry-run)
+        DRY_RUN=1
+        shift
+        ;;
+      *)
+        TASK="$*"
+        return
+        ;;
+    esac
+  done
+
+  if [ -n "$task_file_arg" ]; then
+    TASK="$(read_task_from_file "$task_file_arg")"
+    return
+  fi
+
+  if [ -t 0 ]; then
+    usage >&2
+    exit 1
+  fi
+
+  TASK="$(cat)"
+}
+
+write_status() {
+  local status="$1"
+  local worker_pid="$2"
+  local mode="$3"
+  local updated_at
+  updated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  cat >"$STATUS_FILE" <<EOF
+{
+  "job_id": "$JOB_ID",
+  "status": "$status",
+  "worker_pid": $worker_pid,
+  "mode": "$mode",
+  "workdir": "$WORKDIR",
+  "skill_dir": "$SKILL_DIR",
+  "updated_at": "$updated_at"
+}
+EOF
+}
+
+case "${1:-}" in
+  status)
+    shift
+    show_status "${1:-}"
+    exit 0
+    ;;
+  show)
+    shift
+    show_summary "${1:-}"
+    exit 0
+    ;;
+  help|--help|-h)
+    usage
+    exit 0
+    ;;
+esac
+
+read_task "$@"
+
+if [ -z "${TASK//[$' \t\r\n']/}" ]; then
+  echo "Task text must not be empty." >&2
+  exit 1
+fi
+
+JOB_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$"
+JOB_DIR="${JOBS_ROOT}/${JOB_ID}"
+TASK_FILE="${JOB_DIR}/task.txt"
+STATUS_FILE="${JOB_DIR}/status.json"
+LOG_FILE="${JOB_DIR}/codex.out.log"
+SUMMARY_FILE="${JOB_DIR}/summary.txt"
+PATCH_FILE="${JOB_DIR}/patch.txt"
+
+mkdir -p "$JOB_DIR"
+printf '%s\n' "$TASK" >"$TASK_FILE"
+: >"$LOG_FILE"
+: >"$SUMMARY_FILE"
+: >"$PATCH_FILE"
+write_status "queued" "null" "$DRY_RUN"
+
+env \
+  CODEX_DEV_DRY_RUN="$DRY_RUN" \
+  CODEX_DEV_WORKDIR="$WORKDIR" \
+  CODEX_DEV_JOBS_ROOT="$JOBS_ROOT" \
+  CODEX_DEV_SKILL_DIR="$SKILL_DIR" \
+  nohup "$WORKER_BIN" "$JOB_ID" >>"$LOG_FILE" 2>&1 </dev/null &
+WORKER_PID=$!
+write_status "queued" "$WORKER_PID" "$DRY_RUN"
+
+cat <<EOF
+job_id=$JOB_ID
+job_dir=$JOB_DIR
+status_file=$STATUS_FILE
+task_file=$TASK_FILE
+workdir=$WORKDIR
+worker_pid=$WORKER_PID
+dry_run=$DRY_RUN
+EOF

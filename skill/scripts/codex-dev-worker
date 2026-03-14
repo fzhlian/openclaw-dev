@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+JOB_ID="${1:?missing job id}"
+SKILL_DIR="${CODEX_DEV_SKILL_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+DEFAULT_WORKDIR="${CODEX_DEV_DEFAULT_WORKDIR:-$PWD}"
+WORK_DIR="${CODEX_DEV_WORKDIR:-$DEFAULT_WORKDIR}"
+REPO_DIR="$WORK_DIR"
+JOBS_ROOT="${CODEX_DEV_JOBS_ROOT:-$HOME/.codex-dev/jobs}"
+CHAT_ID="${CODEX_DEV_CHAT_ID:-}"
+NOTIFY_BIN="${SKILL_DIR}/scripts/telegram-notify"
+OPENCLAW_CONFIG="${CODEX_DEV_OPENCLAW_CONFIG:-${OPENCLAW_HOME:-$HOME/.openclaw}/openclaw.json}"
+
+JOB_DIR="${JOBS_ROOT}/${JOB_ID}"
+TASK_FILE="${JOB_DIR}/task.txt"
+STATUS_FILE="${JOB_DIR}/status.json"
+LOG_FILE="${JOB_DIR}/codex.out.log"
+SUMMARY_FILE="${JOB_DIR}/summary.txt"
+PATCH_FILE="${JOB_DIR}/patch.txt"
+BASELINE_DIR="${JOB_DIR}/baseline"
+BASELINE_LIST_FILE="${JOB_DIR}/baseline-files.txt"
+CURRENT_LIST_FILE="${JOB_DIR}/current-files.txt"
+MODE="${CODEX_DEV_DRY_RUN:-0}"
+
+[ -d "$JOB_DIR" ] || { echo "Missing job dir: $JOB_DIR" >&2; exit 1; }
+[ -d "$WORK_DIR" ] || { echo "Workdir does not exist: $WORK_DIR" >&2; exit 1; }
+
+if git -C "$WORK_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+  REPO_DIR="$(git -C "$WORK_DIR" rev-parse --show-toplevel)"
+fi
+
+write_status() {
+  local status="$1"
+  local exit_code="$2"
+  local detail="$3"
+  local updated_at
+  updated_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  cat >"$STATUS_FILE" <<EOF
+{
+  "job_id": "$JOB_ID",
+  "status": "$status",
+  "worker_pid": $$,
+  "exit_code": $exit_code,
+  "mode": "$MODE",
+  "workdir": "$WORK_DIR",
+  "repo_dir": "$REPO_DIR",
+  "detail": "$detail",
+  "updated_at": "$updated_at"
+}
+EOF
+}
+
+load_telegram_token() {
+  if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
+    return 0
+  fi
+  if [ -f "$OPENCLAW_CONFIG" ]; then
+    TELEGRAM_BOT_TOKEN="$(
+      sed -n 's/.*"botToken":[[:space:]]*"\([^"]*\)".*/\1/p' "$OPENCLAW_CONFIG" | head -n 1
+    )"
+    if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
+      export TELEGRAM_BOT_TOKEN
+      return 0
+    fi
+  fi
+  return 1
+}
+
+collect_repo_files() {
+  if git -C "$REPO_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+    git -C "$REPO_DIR" ls-files --cached --others --exclude-standard | LC_ALL=C sort
+  fi
+}
+
+snapshot_repo() {
+  local rel_path
+  mkdir -p "$BASELINE_DIR"
+  collect_repo_files >"$BASELINE_LIST_FILE"
+  while IFS= read -r rel_path; do
+    [ -n "$rel_path" ] || continue
+    mkdir -p "${BASELINE_DIR}/$(dirname "$rel_path")"
+    if [ -e "$REPO_DIR/$rel_path" ]; then
+      cp -p "$REPO_DIR/$rel_path" "${BASELINE_DIR}/$rel_path"
+    fi
+  done <"$BASELINE_LIST_FILE"
+}
+
+append_diff_for_file() {
+  local rel_path="$1"
+  local before_file="${BASELINE_DIR}/$rel_path"
+  local after_file="${REPO_DIR}/$rel_path"
+  if [ -e "$before_file" ] && [ -e "$after_file" ]; then
+    diff -u --label "a/$rel_path" --label "b/$rel_path" "$before_file" "$after_file" >>"$PATCH_FILE" || true
+    return
+  fi
+  if [ -e "$before_file" ]; then
+    diff -u --label "a/$rel_path" --label "b/$rel_path" "$before_file" /dev/null >>"$PATCH_FILE" || true
+    return
+  fi
+  if [ -e "$after_file" ]; then
+    diff -u --label "a/$rel_path" --label "b/$rel_path" /dev/null "$after_file" >>"$PATCH_FILE" || true
+  fi
+}
+
+generate_patch_delta() {
+  local rel_path
+  local combined_list
+  collect_repo_files >"$CURRENT_LIST_FILE"
+  combined_list="$(mktemp)"
+  cat "$BASELINE_LIST_FILE" "$CURRENT_LIST_FILE" | LC_ALL=C sort -u >"$combined_list"
+  : >"$PATCH_FILE"
+  while IFS= read -r rel_path; do
+    [ -n "$rel_path" ] || continue
+    append_diff_for_file "$rel_path"
+  done <"$combined_list"
+  rm -f "$combined_list"
+  if [ ! -s "$PATCH_FILE" ]; then
+    if git -C "$REPO_DIR" rev-parse --show-toplevel >/dev/null 2>&1; then
+      printf 'No repository delta captured for this job.\n' >"$PATCH_FILE"
+    else
+      printf 'No git repository detected for this job workdir: %s\n' "$WORK_DIR" >"$PATCH_FILE"
+    fi
+  fi
+}
+
+send_notification() {
+  local state="$1"
+  local notify_file
+  if [ -z "$CHAT_ID" ]; then
+    echo "Skipped Telegram notification: CODEX_DEV_CHAT_ID is not set" >>"$LOG_FILE"
+    return
+  fi
+  notify_file="$(mktemp)"
+  {
+    printf 'codex-dev job %s: %s\n\n' "$JOB_ID" "$state"
+    printf 'workdir: %s\n' "$WORK_DIR"
+    printf 'repo_dir: %s\n' "$REPO_DIR"
+    printf 'job_dir: %s\n\n' "$JOB_DIR"
+    head -c 3000 "$SUMMARY_FILE" || true
+  } >"$notify_file"
+  if load_telegram_token && [ -x "$NOTIFY_BIN" ]; then
+    "$NOTIFY_BIN" "$CHAT_ID" "$notify_file" || true
+  else
+    echo "Skipped Telegram notification: TELEGRAM_BOT_TOKEN and fallback botToken were unavailable, or telegram-notify was not executable" >>"$LOG_FILE"
+  fi
+  rm -f "$notify_file"
+}
+
+finalize_failure() {
+  local exit_code="$1"
+  if [ ! -s "$SUMMARY_FILE" ]; then
+    {
+      printf 'Worker exited unexpectedly with code %s.\n' "$exit_code"
+      printf 'See log: %s\n' "$LOG_FILE"
+    } >"$SUMMARY_FILE"
+  fi
+  write_status "failed" "$exit_code" "worker exited unexpectedly"
+  send_notification "failed"
+}
+
+trap 'rc=$?; if [ "$rc" -ne 0 ]; then finalize_failure "$rc"; fi' EXIT
+
+write_status "running" "null" "worker started"
+snapshot_repo
+
+if [ "$MODE" = "1" ]; then
+  {
+    printf 'Dry run only.\n'
+    printf 'The worker validated paths and notification flow without launching Codex.\n'
+    printf 'Task preview:\n'
+    sed -n '1,20p' "$TASK_FILE"
+  } >"$SUMMARY_FILE"
+  printf 'dry-run: no patch generated\n' >"$PATCH_FILE"
+  write_status "completed" "0" "dry run finished"
+  send_notification "completed"
+  trap - EXIT
+  exit 0
+fi
+
+CODEX_EXIT=0
+if codex -a never exec --sandbox workspace-write -C "$WORK_DIR" -o "$SUMMARY_FILE" "$(cat "$TASK_FILE")" >>"$LOG_FILE" 2>&1; then
+  CODEX_EXIT=0
+else
+  CODEX_EXIT=$?
+fi
+
+generate_patch_delta
+
+if [ "$CODEX_EXIT" -eq 0 ]; then
+  if [ ! -s "$SUMMARY_FILE" ]; then
+    printf 'Codex completed but returned an empty summary.\n' >"$SUMMARY_FILE"
+  fi
+  write_status "completed" "0" "codex exec finished with delta patch"
+  send_notification "completed"
+  trap - EXIT
+  exit 0
+fi
+
+if [ ! -s "$SUMMARY_FILE" ]; then
+  {
+    printf 'Codex failed with exit code %s.\n' "$CODEX_EXIT"
+    printf 'See log: %s\n' "$LOG_FILE"
+  } >"$SUMMARY_FILE"
+fi
+
+write_status "failed" "$CODEX_EXIT" "codex exec failed"
+send_notification "failed"
+trap - EXIT
+exit "$CODEX_EXIT"
