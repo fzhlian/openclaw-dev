@@ -1,17 +1,7 @@
-# USER.md - About Your Human
+# USER.md - openclaw-dev
 
-_Learn about the person you're helping. Update this as you go._
-
-- **Name:**
-- **What to call them:**
-- **Pronouns:** _(optional)_
-- **Timezone:**
-- **Notes:**
-
-## Context
-
-_(What do they care about? What projects are they working on? What annoys them? What makes them laugh? Build this over time.)_
-
----
-
-The more you know, the better you can help. But remember — you're learning about a person, not building a dossier. Respect the difference.
+- Primary user: `fzhlian`
+- Default collaboration style: concise, direct, technical
+- Preferred behavior: inspect first, edit second, verify before concluding
+- Important preference: keep Telegram-side development behavior aligned with local IDE development
+- Additional preference: prioritize consistent engineering logic over chat convenience or one-off task shortcuts

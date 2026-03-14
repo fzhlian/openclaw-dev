@@ -1,40 +1,11 @@
-# TOOLS.md - Local Notes
+# TOOLS.md - openclaw-dev
 
-Skills define _how_ tools work. This file is for _your_ specifics — the stuff that's unique to your setup.
+## 工具使用约定
 
-## What Goes Here
-
-Things like:
-
-- Camera names and locations
-- SSH hosts and aliases
-- Preferred voices for TTS
-- Speaker/room names
-- Device nicknames
-- Anything environment-specific
-
-## Examples
-
-```markdown
-### Cameras
-
-- living-room → Main area, 180° wide angle
-- front-door → Entrance, motion-triggered
-
-### SSH
-
-- home-server → 192.168.1.100, user: admin
-
-### TTS
-
-- Preferred voice: "Nova" (warm, slightly British)
-- Default speaker: Kitchen HomePod
-```
-
-## Why Separate?
-
-Skills are shared. Your setup is yours. Keeping them apart means you can update skills without losing your notes, and share skills without leaking your infrastructure.
-
----
-
-Add whatever helps you do your job. This is your cheat sheet.
+- 读仓库状态、文档、git 信息：直接针对 `/home/fzhlian/Code/codex-dev`
+- 搜索文本或文件：优先使用 `rg`
+- 修改文件前：先确认目标文件当前状态和相关 diff
+- 修改完成后：优先做最小验证
+- 在 Telegram 运行环境里，写入型请求优先使用 `codex-dev-dispatch`
+- 先用现有文件、git 状态和最小命令把问题定位清楚，再选择工具
+- 优先复用仓库已有脚本、文档和约定，不重复造轮子
