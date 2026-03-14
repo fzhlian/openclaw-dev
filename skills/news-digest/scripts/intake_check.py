@@ -15,6 +15,8 @@ GROUPED_OUTPUT_MODE = "按主题分组+逐条"
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
 SUPPORTED_OUTPUT_MODES = (DEFAULT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
+FLAT_OUTPUT_MODE_ALIASES = {"摘要总览+逐条清单", "摘要总览+逐条", "总览+逐条"}
+GROUPED_OUTPUT_MODE_ALIASES = {"按主题分组+逐条", "按主题分组+逐条清单", "分组+逐条"}
 FREQUENCY_ALIASES = {
     "一次性": "一次性",
     "一次": "一次性",
@@ -64,6 +66,18 @@ def normalize_frequency(value: str) -> str:
     return FREQUENCY_ALIASES.get(text, text)
 
 
+def normalize_output_mode(value: str) -> str:
+    text = value.strip()
+    if not text:
+        return ""
+    compact = "".join(text.split())
+    if compact in FLAT_OUTPUT_MODE_ALIASES:
+        return DEFAULT_OUTPUT_MODE
+    if compact in GROUPED_OUTPUT_MODE_ALIASES:
+        return GROUPED_OUTPUT_MODE
+    return text
+
+
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = split_csv(args.topic)
     sites = split_csv(args.site)
@@ -73,7 +87,7 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
         "time_range": args.time_range.strip(),
         "frequency": normalize_frequency(args.frequency),
         "limit": args.limit,
-        "output_mode": args.output_mode.strip(),
+        "output_mode": normalize_output_mode(args.output_mode),
         "language": args.language.strip() or DEFAULT_LANGUAGE,
         "defaults_applied": {
             "time_range": not bool(args.time_range.strip()),
@@ -157,7 +171,8 @@ def main() -> int:
     normalized_frequency = normalize_frequency(args.frequency)
     if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
         raise SystemExit("--frequency 当前仅支持 一次性 / 每日 / 每周")
-    if args.output_mode.strip() and args.output_mode.strip() not in SUPPORTED_OUTPUT_MODES:
+    normalized_output_mode = normalize_output_mode(args.output_mode)
+    if normalized_output_mode and normalized_output_mode not in SUPPORTED_OUTPUT_MODES:
         raise SystemExit(
             f"--output-mode 当前仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}"
         )

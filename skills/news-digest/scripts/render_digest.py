@@ -16,6 +16,8 @@ FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
 SUPPORTED_OUTPUT_MODES = (FLAT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
+FLAT_OUTPUT_MODE_ALIASES = {"摘要总览+逐条清单", "摘要总览+逐条", "总览+逐条"}
+GROUPED_OUTPUT_MODE_ALIASES = {"按主题分组+逐条", "按主题分组+逐条清单", "分组+逐条"}
 FREQUENCY_ALIASES = {
     "一次性": "一次性",
     "一次": "一次性",
@@ -33,6 +35,18 @@ FREQUENCY_ALIASES = {
 SUPPORTED_FREQUENCIES = ("一次性", "每日", "每周")
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
+
+
+def normalize_output_mode(value: str) -> str:
+    text = value.strip()
+    if not text:
+        return FLAT_OUTPUT_MODE
+    compact = "".join(text.split())
+    if compact in FLAT_OUTPUT_MODE_ALIASES:
+        return FLAT_OUTPUT_MODE
+    if compact in GROUPED_OUTPUT_MODE_ALIASES:
+        return GROUPED_OUTPUT_MODE
+    return text
 
 
 def load_payload(path: str) -> dict:
@@ -153,6 +167,7 @@ def render_articles(results: list[dict], output_mode: str) -> list[str]:
 
 def render_parameters(args: argparse.Namespace) -> list[str]:
     frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
+    output_mode = normalize_output_mode(args.output_mode)
     return [
         "## 检索参数",
         f"- 关键词：{args.keywords or '（未提供）'}",
@@ -160,7 +175,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
         f"- 时间范围：{args.time_range or '（未提供）'}",
         f"- 频率：{frequency or '（未提供）'}",
         f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",
-        f"- 输出模式：{args.output_mode or FLAT_OUTPUT_MODE}",
+        f"- 输出模式：{output_mode}",
         f"- 输出语言：{args.language or DEFAULT_LANGUAGE}",
     ]
 
@@ -216,6 +231,7 @@ def render_discovered_results(payload: dict) -> list[str]:
 def build_markdown(payload: dict, args: argparse.Namespace) -> str:
     results = payload.get("results", [])
     force_degraded = bool(payload.get("forceDegraded"))
+    output_mode = normalize_output_mode(args.output_mode)
 
     if force_degraded or not results:
         lines: list[str] = []
@@ -229,7 +245,7 @@ def build_markdown(payload: dict, args: argparse.Namespace) -> str:
     lines = ["## 摘要总览"]
     lines.extend(render_overview(results, max_items=args.overview_limit))
     lines.append("")
-    lines.extend(render_articles(results, output_mode=args.output_mode))
+    lines.extend(render_articles(results, output_mode=output_mode))
     lines.append("")
     lines.extend(render_parameters(args))
     lines.append("")
@@ -270,7 +286,8 @@ def main() -> int:
     if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
         print("--frequency 当前仅支持 一次性 / 每日 / 每周", file=sys.stderr)
         return 1
-    if args.output_mode.strip() not in SUPPORTED_OUTPUT_MODES:
+    normalized_output_mode = normalize_output_mode(args.output_mode)
+    if normalized_output_mode not in SUPPORTED_OUTPUT_MODES:
         print(
             f"--output-mode 当前仅支持 {FLAT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}",
             file=sys.stderr,
@@ -282,6 +299,7 @@ def main() -> int:
 
     try:
         payload = load_payload(args.input)
+        args.output_mode = normalized_output_mode
         print(build_markdown(payload, args))
     except (ValueError, json.JSONDecodeError) as exc:
         print(str(exc), file=sys.stderr)

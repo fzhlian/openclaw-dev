@@ -124,6 +124,22 @@ class NewsDigestScriptTests(unittest.TestCase):
             result.stderr,
         )
 
+    def test_intake_check_normalizes_natural_output_mode_labels(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--output-mode",
+            "总览+逐条",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["输出模式"], "摘要总览 + 逐条清单")
+
     def test_filter_results_keeps_same_title_across_domains(self) -> None:
         input_path = self.write_json(
             [
@@ -217,6 +233,31 @@ class NewsDigestScriptTests(unittest.TestCase):
             "按主题分组+逐条 模式要求每条结果包含 topic / queryTopic / keyword / query 字段",
             result.stderr,
         )
+
+    def test_render_digest_normalizes_natural_output_mode_labels(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                        "topic": "OpenAI",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--output-mode",
+            "按主题分组 + 逐条",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("### OpenAI", result.stdout)
+        self.assertIn("- 输出模式：按主题分组+逐条", result.stdout)
 
     def test_render_digest_degrades_when_no_results(self) -> None:
         input_path = self.write_json(
