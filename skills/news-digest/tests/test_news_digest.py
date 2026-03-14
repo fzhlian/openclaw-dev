@@ -447,7 +447,9 @@ class NewsDigestScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("OpenAI policy update（来源：openai.com）：policy summary from search result", result.stdout)
+        self.assertIn("- 时间范围：最近 7 天", result.stdout)
         self.assertIn("- 频率：一次性", result.stdout)
+        self.assertIn("- 结果数：5", result.stdout)
         self.assertIn("- 输出语言：中文", result.stdout)
 
     def test_render_digest_derives_source_domain_from_url_when_missing(self) -> None:

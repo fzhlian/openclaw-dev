@@ -247,6 +247,7 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 若结果缺少 `matchedDomain` / `sourceDomain` 但 `url` 存在，最终来源仍应回显 URL 提取出的主域名
 - `## 检索参数` 中包含 `频率`
 - `## 检索参数` 中包含 `输出语言`，默认显示 `中文`
+- 若渲染阶段未显式传入时间范围与结果数，最终 `## 检索参数` 中应回显默认值 `最近 7 天` 与 `5`
 - 若渲染输入里传入 `OpenAI,Gemini` 这类逗号分隔关键词，最终 `## 检索参数` 中应回显为 `OpenAI、Gemini`
 - 若渲染输入里传入 `OpenAI，Gemini` 或 `openai.com，blog.google` 这类全角逗号分隔值，最终 `## 检索参数` 中也应按多项正确回显
 - 若渲染输入里传入完整 URL 或带 `www.` 的站点，最终 `## 检索参数` 中应回显归一化后的主域名

@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
+DEFAULT_LIMIT = 5
+DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_TIME_LABEL = "时间未标注"
 DEFAULT_LIMITATIONS = "来源受限、时间缺失或覆盖不足时，结论仅基于当前检索结果。"
 DEFAULT_NEXT_STEP = "如需更高覆盖，可放宽时间范围、补充来源或显式开启扩词。"
@@ -227,16 +229,17 @@ def render_articles(results: list[dict], output_mode: str) -> list[str]:
 def render_parameters(args: argparse.Namespace) -> list[str]:
     frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
     output_mode = normalize_output_mode(args.output_mode)
-    time_range = normalize_time_range(args.time_range)
+    time_range = normalize_time_range(args.time_range) or DEFAULT_TIME_RANGE
     keywords = normalize_topics_display(args.keywords)
     sites = normalize_sites_display(args.sites)
+    limit = args.limit if args.limit is not None else DEFAULT_LIMIT
     return [
         "## 检索参数",
         f"- 关键词：{keywords or '（未提供）'}",
         f"- 网站：{sites or '（未提供）'}",
-        f"- 时间范围：{time_range or '（未提供）'}",
+        f"- 时间范围：{time_range}",
         f"- 频率：{frequency or '（未提供）'}",
-        f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",
+        f"- 结果数：{limit}",
         f"- 输出模式：{output_mode}",
         f"- 输出语言：{args.language or DEFAULT_LANGUAGE}",
     ]
