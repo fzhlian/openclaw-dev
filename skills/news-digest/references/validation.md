@@ -158,6 +158,7 @@ python3 skills/news-digest/scripts/filter_results.py \
 - 两条结果都能保留链接
 - 第一条时间缺失，最终输出时标注“时间未标注”
 - 摘要应只基于归一化并过滤后的结果，不直接混用原始搜索字段
+- 可参考 `references/workflow-example.md` 对照“原始字段 -> 标准字段 -> 过滤后输出”的完整样例
 
 ## 回归检查
 
