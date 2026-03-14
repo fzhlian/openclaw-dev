@@ -123,15 +123,15 @@ Agent names / agent 名：
 
 - Name them by purpose or target repo  
   用用途或目标仓库命名
-- Example: `datahz-codex`  
-  例如：`datahz-codex`
+- Example: `openclaw-dev-codex`  
+  例如：`openclaw-dev-codex`
 
 Workspace names / workspace 名：
 
 - Match the related agent  
   与 agent 对应
-- Example: `workspace-datahz-codex`  
-  例如：`workspace-datahz-codex`
+- Example: `workspace-openclaw-dev-codex`  
+  例如：`workspace-openclaw-dev-codex`
 
 ## 8. New Skill Workflow | 新增 skill 的推荐流程
 

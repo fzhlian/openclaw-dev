@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""根据关键词和站点生成检索查询列表（支持关键词扩展与英文站点关键词转换）。"""
+"""根据关键词和站点生成检索查询列表。"""
 
 from __future__ import annotations
 
@@ -74,12 +74,7 @@ def normalize_site(site: str) -> str:
 
 
 def is_english_site(domain: str) -> bool:
-    if domain in ENGLISH_DOMAINS:
-        return True
-    if domain.endswith(".cn"):
-        return False
-    # 保守默认：非 .cn 域名按英文站点处理
-    return True
+    return domain in ENGLISH_DOMAINS
 
 
 def keyword_seed(keyword: str) -> str:
@@ -180,14 +175,14 @@ def parse_args() -> argparse.Namespace:
         help='排除词，可重复传入，也支持逗号分隔（输出为 -"词"）',
     )
     parser.add_argument(
-        "--no-expand",
+        "--expand",
         action="store_true",
-        help="关闭关键词自动扩展（默认开启）",
+        help="显式开启关键词扩展",
     )
     parser.add_argument(
-        "--no-auto-english",
+        "--auto-english",
         action="store_true",
-        help="关闭英文站点关键词自动英文化（默认开启）",
+        help="对已知英文站点显式开启关键词英文化",
     )
     parser.add_argument(
         "--format",
@@ -229,8 +224,8 @@ def main() -> int:
             keywords=keywords,
             sites=sites,
             excludes=excludes,
-            auto_expand=not args.no_expand,
-            auto_english=not args.no_auto_english,
+            auto_expand=args.expand,
+            auto_english=args.auto_english,
         )
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
@@ -242,8 +237,8 @@ def main() -> int:
                 {
                     "queries": queries,
                     "keywordPlan": keyword_plan,
-                    "autoExpand": not args.no_expand,
-                    "autoEnglish": not args.no_auto_english,
+                    "autoExpand": args.expand,
+                    "autoEnglish": args.auto_english,
                 },
                 ensure_ascii=False,
                 indent=2,

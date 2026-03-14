@@ -55,7 +55,7 @@ Recommended minimum settings:
       "execApprovals": {
         "enabled": true,
         "approvers": [8249736863],
-        "agentFilter": ["main", "datahz-codex"],
+        "agentFilter": ["main", "openclaw-dev-codex"],
         "target": "dm"
       }
     }
@@ -113,6 +113,9 @@ Create or update a dedicated Telegram-bound agent that knows:
 - read-only requests can answer directly
 - `/codex-dev ...` is a forced async request
 - `/codex-help` and `/codex-dev help` should return usage guidance
+- when developing a reusable skill, never bake the current task's keywords, sites, or project names into default behavior
+- task-specific presets belong in examples, references, or separate preset files, not in the generic skill default path
+- write requests should default to `--workdir /home/fzhlian/Code/codex-dev` unless the user explicitly names another path
 
 Recommended user-facing examples:
 
