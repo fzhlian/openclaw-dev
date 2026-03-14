@@ -52,7 +52,7 @@ def normalize_output_mode(value: str) -> str:
     text = value.strip()
     if not text:
         return FLAT_OUTPUT_MODE
-    compact = "".join(text.split())
+    compact = "".join(text.split()).replace("＋", "+")
     if compact in FLAT_OUTPUT_MODE_ALIASES:
         return FLAT_OUTPUT_MODE
     if compact in GROUPED_OUTPUT_MODE_ALIASES:
