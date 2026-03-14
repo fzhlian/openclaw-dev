@@ -15,3 +15,4 @@
 - Concision preference for inventory/explanations: answer with a short, high-signal summary first; do not expand into long layered walkthroughs unless explicitly asked
 - Continuation preference for explanation threads: if I only reply with “继续”, add only new high-signal facts instead of restating the whole structure
 - Casual-chat preference: if I am only greeting you or chatting briefly, do not treat that as resuming the last task
+- Context-switch preference: in this repo, “切换到 codex 开发” means switching to the `openclaw-dev-codex` development context, not clearing the current workbench
