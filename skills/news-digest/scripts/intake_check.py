@@ -15,6 +15,20 @@ GROUPED_OUTPUT_MODE = "按主题分组+逐条"
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
 SUPPORTED_OUTPUT_MODES = (DEFAULT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
+FREQUENCY_ALIASES = {
+    "一次性": "一次性",
+    "一次": "一次性",
+    "执行一次": "一次性",
+    "跑一遍": "一次性",
+    "先发一版": "一次性",
+    "先跑一版": "一次性",
+    "每日": "每日",
+    "每天": "每日",
+    "日报": "每日",
+    "每周": "每周",
+    "每星期": "每周",
+    "周报": "每周",
+}
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -42,6 +56,13 @@ def ask_list(params: dict[str, Any]) -> list[str]:
     return asks
 
 
+def normalize_frequency(value: str) -> str:
+    text = value.strip()
+    if not text:
+        return ""
+    return FREQUENCY_ALIASES.get(text, text)
+
+
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = split_csv(args.topic)
     sites = split_csv(args.site)
@@ -49,7 +70,7 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
         "topics": topics,
         "sites": sites,
         "time_range": args.time_range.strip(),
-        "frequency": args.frequency.strip(),
+        "frequency": normalize_frequency(args.frequency),
         "limit": args.limit,
         "output_mode": args.output_mode.strip(),
         "language": args.language.strip() or DEFAULT_LANGUAGE,

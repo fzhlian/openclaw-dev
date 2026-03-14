@@ -16,6 +16,20 @@ FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
 SUPPORTED_OUTPUT_MODES = (FLAT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
+FREQUENCY_ALIASES = {
+    "一次性": "一次性",
+    "一次": "一次性",
+    "执行一次": "一次性",
+    "跑一遍": "一次性",
+    "先发一版": "一次性",
+    "先跑一版": "一次性",
+    "每日": "每日",
+    "每天": "每日",
+    "日报": "每日",
+    "每周": "每周",
+    "每星期": "每周",
+    "周报": "每周",
+}
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 
@@ -137,12 +151,13 @@ def render_articles(results: list[dict], output_mode: str) -> list[str]:
 
 
 def render_parameters(args: argparse.Namespace) -> list[str]:
+    frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
     return [
         "## 检索参数",
         f"- 关键词：{args.keywords or '（未提供）'}",
         f"- 网站：{args.sites or '（未提供）'}",
         f"- 时间范围：{args.time_range or '（未提供）'}",
-        f"- 频率：{args.frequency or '（未提供）'}",
+        f"- 频率：{frequency or '（未提供）'}",
         f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",
         f"- 输出模式：{args.output_mode or FLAT_OUTPUT_MODE}",
         f"- 输出语言：{args.language or DEFAULT_LANGUAGE}",
