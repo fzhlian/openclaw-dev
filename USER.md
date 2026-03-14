@@ -14,3 +14,4 @@
 - Asset-inventory preference: when asking what self-developed skills/agents/workspaces exist, distinguish repo skills, publishable skill, runtime-installed skills, runtime agents, and workspace configs instead of collapsing them
 - Concision preference for inventory/explanations: answer with a short, high-signal summary first; do not expand into long layered walkthroughs unless explicitly asked
 - Continuation preference for explanation threads: if I only reply with “继续”, add only new high-signal facts instead of restating the whole structure
+- Casual-chat preference: if I am only greeting you or chatting briefly, do not treat that as resuming the last task
