@@ -108,7 +108,8 @@ def normalize_frequency(value: str) -> str:
     text = value.strip()
     if not text:
         return ""
-    return FREQUENCY_ALIASES.get(text, text)
+    compact = "".join(text.split())
+    return FREQUENCY_ALIASES.get(compact, FREQUENCY_ALIASES.get(text, text))
 
 
 def normalize_output_mode(value: str) -> str:

@@ -242,7 +242,8 @@ def render_articles(results: list[dict], output_mode: str) -> list[str]:
 
 
 def render_parameters(args: argparse.Namespace) -> list[str]:
-    frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
+    compact_frequency = "".join(args.frequency.strip().split())
+    frequency = FREQUENCY_ALIASES.get(compact_frequency, FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip()))
     output_mode = normalize_output_mode(args.output_mode)
     time_range = normalize_time_range(args.time_range) or DEFAULT_TIME_RANGE
     keywords = normalize_topics_display(args.keywords)
@@ -369,7 +370,8 @@ def main() -> int:
     if args.overview_limit < 1:
         print("--overview-limit 必须 >= 1", file=sys.stderr)
         return 1
-    normalized_frequency = FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip())
+    compact_frequency = "".join(args.frequency.strip().split())
+    normalized_frequency = FREQUENCY_ALIASES.get(compact_frequency, FREQUENCY_ALIASES.get(args.frequency.strip(), args.frequency.strip()))
     if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
         print("--frequency 当前仅支持 一次性 / 每日 / 每周", file=sys.stderr)
         return 1
