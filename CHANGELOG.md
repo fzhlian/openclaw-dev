@@ -5,6 +5,11 @@ All notable changes to this project will be tracked here.
 
 ## [Unreleased] | [未发布]
 
+## [0.1.11] - 2026-03-15
+
+- Bumped the publish example and republished the `codex-dev` community package for the latest workspace state.
+  更新发布示例，并按当前工作区最新状态重新发布 `codex-dev` 社区包。
+
 ## [0.1.10] - 2026-03-15
 
 - Republished the community package after resolving the ClawHub path check, version-conflict retries, and temporary registry rate limiting.

@@ -85,7 +85,7 @@ Publish source directory for the current primary project `codex-dev`: `skill/`
 Example:
 
 ```bash
-clawhub publish ./skill --slug codex-dev --version 0.1.10
+clawhub publish ./skill --slug codex-dev --version 0.1.11
 ```
 
 ## 文档规范 | Documentation Policy
