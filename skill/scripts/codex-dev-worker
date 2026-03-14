@@ -10,6 +10,7 @@ JOBS_ROOT="${CODEX_DEV_JOBS_ROOT:-$HOME/.codex-dev/jobs}"
 CHAT_ID="${CODEX_DEV_CHAT_ID:-}"
 NOTIFY_BIN="${SKILL_DIR}/scripts/telegram-notify"
 OPENCLAW_CONFIG="${CODEX_DEV_OPENCLAW_CONFIG:-${OPENCLAW_HOME:-$HOME/.openclaw}/openclaw.json}"
+OPENCLAW_ENV_FILE="${CODEX_DEV_OPENCLAW_ENV_FILE:-${OPENCLAW_HOME:-$HOME/.openclaw}/.env}"
 
 JOB_DIR="${JOBS_ROOT}/${JOB_ID}"
 TASK_FILE="${JOB_DIR}/task.txt"
@@ -50,7 +51,17 @@ write_status() {
 EOF
 }
 
+load_openclaw_env() {
+  if [ -f "$OPENCLAW_ENV_FILE" ]; then
+    # shellcheck disable=SC1090
+    set -a
+    . "$OPENCLAW_ENV_FILE"
+    set +a
+  fi
+}
+
 load_telegram_token() {
+  load_openclaw_env
   if [ -n "${TELEGRAM_BOT_TOKEN:-}" ]; then
     return 0
   fi

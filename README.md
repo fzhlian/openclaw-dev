@@ -35,6 +35,9 @@ The primary project in this repository is `codex-dev`, which provides:
 ./bin/codex-dev-show <job-id>
 ```
 
+如需直接在 Telegram 中审批新的执行请求，请在本地 OpenClaw 配置里启用 `channels.telegram.execApprovals`。  
+If you want to approve new exec requests directly from Telegram, enable `channels.telegram.execApprovals` in your local OpenClaw config.
+
 ## 项目结构 | Project Structure
 
 - `skill/`  
@@ -52,6 +55,7 @@ Recommended reading:
 
 - [`docs/migration.md`](docs/migration.md)
 - [`docs/conventions.md`](docs/conventions.md)
+- [`docs/security-hardening.md`](docs/security-hardening.md)
 - [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
 ## 本地安装映射 | Local Install Mapping

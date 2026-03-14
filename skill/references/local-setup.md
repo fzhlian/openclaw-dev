@@ -40,6 +40,52 @@ export CODEX_DEV_CHAT_ID="123456789"
 export TELEGRAM_BOT_TOKEN="your-bot-token"
 ```
 
+## Telegram 审批 | Telegram Exec Approvals
+
+If you want to approve exec requests directly from Telegram, enable Telegram exec approvals in your local OpenClaw config.  
+如果你希望直接在 Telegram 里审批执行请求，需要在本地 OpenClaw 配置中启用 Telegram 执行审批。
+
+Recommended minimum settings:  
+建议的最小配置：
+
+```json
+{
+  "channels": {
+    "telegram": {
+      "execApprovals": {
+        "enabled": true,
+        "approvers": [8249736863],
+        "agentFilter": ["main", "datahz-codex"],
+        "target": "dm"
+      }
+    }
+  }
+}
+```
+
+Notes:  
+说明：
+
+- `approvers` should be the numeric Telegram user id that is allowed to approve.
+- `approvers` 应填写允许审批的 Telegram 数字用户 ID。
+- `target: "dm"` is the safest default because approval prompts stay in a private chat.
+- `target: "dm"` 是最安全的默认值，因为审批提示会留在私聊里。
+- If you need approvals to appear in the originating Telegram chat/topic, use `"channel"` or `"both"` only in trusted chats.
+- 如果你需要让审批提示直接出现在当前 Telegram 聊天/话题里，只应在受信任聊天中使用 `"channel"` 或 `"both"`。
+- After changing the config, restart the gateway.
+- 改完配置后，需要重启 gateway。
+
+Verification flow:  
+验证流程：
+
+```bash
+systemctl --user restart openclaw-gateway.service
+openclaw channels status
+```
+
+If `/approve` still says it needs `operator.approvals`, the current Telegram client session is missing the approval scope and should be re-paired/upgraded through the Control UI or device pairing flow.  
+如果 `/approve` 仍提示缺少 `operator.approvals`，说明当前 Telegram 客户端会话还没有审批 scope，需要通过 Control UI 或设备配对流程重新配对/升级权限。
+
 ## Optional wrapper install | 可选的包装命令安装
 
 From the installed skill folder:
