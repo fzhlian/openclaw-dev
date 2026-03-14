@@ -10,6 +10,10 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
+SNIPPET_KEYS = ("snippet", "description", "summary", "content")
+PUBLISHED_AT_KEYS = ("publishedAt", "published_at", "date", "time")
+SOURCE_DOMAIN_KEYS = ("sourceDomain", "domain", "site", "source")
+
 
 def normalize_site(site: str) -> str:
     candidate = site.strip().lower()
@@ -72,7 +76,35 @@ def load_results(path: str) -> list[dict]:
     raise ValueError("输入 JSON 必须是结果数组，或包含 results 数组")
 
 
-def filter_results(results: list[dict], sites: list[str]) -> dict[str, object]:
+def first_nonempty(item: dict, keys: tuple[str, ...]) -> str:
+    for key in keys:
+        value = item.get(key)
+        if value is None:
+            continue
+        text = str(value).strip()
+        if text:
+            return text
+    return ""
+
+
+def normalize_result_item(item: dict) -> dict:
+    normalized = dict(item)
+    snippet = first_nonempty(item, SNIPPET_KEYS)
+    published_at = first_nonempty(item, PUBLISHED_AT_KEYS)
+    source_domain = first_nonempty(item, SOURCE_DOMAIN_KEYS)
+    url = str(item.get("url", "")).strip()
+
+    if snippet and not normalized.get("snippet"):
+        normalized["snippet"] = snippet
+    if published_at and not normalized.get("publishedAt"):
+        normalized["publishedAt"] = published_at
+    if not normalized.get("sourceDomain"):
+        normalized["sourceDomain"] = source_domain or normalize_host(url)
+
+    return normalized
+
+
+def filter_results(results: list[dict], sites: list[str], auto_normalize: bool = False) -> dict[str, object]:
     domains = [normalize_site(site) for site in sites]
     seen_urls: set[str] = set()
     seen_titles: set[str] = set()
@@ -84,41 +116,43 @@ def filter_results(results: list[dict], sites: list[str]) -> dict[str, object]:
             dropped.append({"index": index, "reason": "invalid_item", "item": item})
             continue
 
-        url = str(item.get("url", "")).strip()
-        title = str(item.get("title", "")).strip()
+        current = normalize_result_item(item) if auto_normalize else dict(item)
+
+        url = str(current.get("url", "")).strip()
+        title = str(current.get("title", "")).strip()
         if not url:
-            dropped.append({"index": index, "reason": "missing_url", "item": item})
+            dropped.append({"index": index, "reason": "missing_url", "item": current})
             continue
         if not title:
-            dropped.append({"index": index, "reason": "missing_title", "item": item})
+            dropped.append({"index": index, "reason": "missing_title", "item": current})
             continue
 
         host = normalize_host(url)
         if not host:
-            dropped.append({"index": index, "reason": "invalid_host", "item": item})
+            dropped.append({"index": index, "reason": "invalid_host", "item": current})
             continue
 
         matched_domain = next((domain for domain in domains if host_matches(host, domain)), None)
         if not matched_domain:
-            dropped.append({"index": index, "reason": "domain_mismatch", "host": host, "item": item})
+            dropped.append({"index": index, "reason": "domain_mismatch", "host": host, "item": current})
             continue
 
         normalized_url = normalize_url(url)
         normalized_title = normalize_title(title)
 
         if normalized_url in seen_urls:
-            dropped.append({"index": index, "reason": "duplicate_url", "normalizedUrl": normalized_url, "item": item})
+            dropped.append({"index": index, "reason": "duplicate_url", "normalizedUrl": normalized_url, "item": current})
             continue
 
         if normalized_title and normalized_title in seen_titles:
-            dropped.append({"index": index, "reason": "duplicate_title", "normalizedTitle": normalized_title, "item": item})
+            dropped.append({"index": index, "reason": "duplicate_title", "normalizedTitle": normalized_title, "item": current})
             continue
 
         seen_urls.add(normalized_url)
         if normalized_title:
             seen_titles.add(normalized_title)
 
-        enriched = dict(item)
+        enriched = dict(current)
         enriched["matchedDomain"] = matched_domain
         enriched["normalizedUrl"] = normalized_url
         enriched["normalizedTitle"] = normalized_title
@@ -142,6 +176,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--site", action="append", default=[], help="目标站点，可重复传入，也支持逗号分隔")
     parser.add_argument("--format", choices=["json", "text"], default="json", help="输出格式")
     parser.add_argument("--keep-dropped", action="store_true", help="输出中保留被丢弃条目")
+    parser.add_argument("--normalize", action="store_true", help="将 description/summary/content 等别名字段归一化为标准结果字段")
     return parser.parse_args()
 
 
@@ -154,7 +189,7 @@ def main() -> int:
 
     try:
         results = load_results(args.input)
-        payload = filter_results(results, sites)
+        payload = filter_results(results, sites, auto_normalize=args.normalize)
     except (ValueError, json.JSONDecodeError) as exc:
         print(str(exc), file=sys.stderr)
         return 1
