@@ -106,7 +106,7 @@ SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
 KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
 SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
-PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
+PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
 
 
 def normalize_output_mode(value: str) -> str:
