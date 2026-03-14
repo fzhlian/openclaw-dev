@@ -102,6 +102,24 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["confirm"]["时间范围"], "最近 7 天")
         self.assertTrue(payload["defaultsApplied"]["time_range"])
 
+    def test_intake_check_defaults_output_mode_without_asking(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--time-range",
+            "最近 7 天",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertNotIn("你更想看“总览+逐条”，还是“按主题分组+逐条”？", payload["missingQuestions"])
+        self.assertEqual(payload["confirm"]["输出模式"], "摘要总览 + 逐条清单")
+        self.assertTrue(payload["defaultsApplied"]["output_mode"])
+
     def test_intake_check_normalizes_time_range_shorthand(self) -> None:
         result = self.run_script(
             "intake_check.py",

@@ -91,8 +91,6 @@ def ask_list(params: dict[str, Any]) -> list[str]:
         asks.append("你希望限定哪些站点/媒体？如果不限定，我可先给高相关来源建议。")
     if not params["frequency"]:
         asks.append("这是一次性检索，还是要做日报/周报模板？")
-    if not params["output_mode"]:
-        asks.append("你更想看“总览+逐条”，还是“按主题分组+逐条”？")
     return asks
 
 
