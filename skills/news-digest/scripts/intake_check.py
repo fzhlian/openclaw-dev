@@ -95,6 +95,7 @@ SITE_ALIASES = {
     "华尔街见闻": "wallstreetcn.com",
     "華爾街見聞": "wallstreetcn.com",
 }
+KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -120,11 +121,14 @@ def dedupe_keywords(items: list[str]) -> list[str]:
     deduped: list[str] = []
     seen: set[str] = set()
     for item in items:
-        marker = item.casefold()
+        normalized = item.strip().strip(KEYWORD_EDGE_PUNCTUATION)
+        if not normalized:
+            continue
+        marker = normalized.casefold()
         if marker in seen:
             continue
         seen.add(marker)
-        deduped.append(item)
+        deduped.append(normalized)
     return deduped
 
 

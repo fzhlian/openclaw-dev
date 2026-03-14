@@ -35,6 +35,7 @@ CN_EXPANSIONS: dict[str, list[str]] = {
     "战争": ["冲突", "战事", "军事打击"],
     "ai": ["人工智能", "机器学习", "大模型"],
 }
+KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？"
 
 
 def split_items(values: list[str]) -> list[str]:
@@ -60,11 +61,14 @@ def dedupe_keywords(items: list[str]) -> list[str]:
     deduped: list[str] = []
     seen: set[str] = set()
     for item in items:
-        marker = item.casefold()
+        normalized = item.strip().strip(KEYWORD_EDGE_PUNCTUATION)
+        if not normalized:
+            continue
+        marker = normalized.casefold()
         if marker in seen:
             continue
         seen.add(marker)
-        deduped.append(item)
+        deduped.append(normalized)
     return deduped
 
 

@@ -155,6 +155,21 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("site:openai.com OpenAI", lines)
         self.assertIn("site:blog.google OpenAI", lines)
 
+    def test_build_query_strips_trailing_keyword_punctuation(self) -> None:
+        result = self.run_script(
+            "build_query.py",
+            "-k",
+            "OpenAI。,Gemini！",
+            "-s",
+            "openai.com",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = result.stdout.strip().splitlines()
+        self.assertIn("site:openai.com OpenAI", lines)
+        self.assertIn("site:openai.com Gemini", lines)
+        self.assertNotIn("site:openai.com OpenAI。", lines)
+        self.assertNotIn("site:openai.com Gemini！", lines)
+
     def test_build_query_deduplicates_keywords_case_insensitively(self) -> None:
         result = self.run_script(
             "build_query.py",
@@ -671,6 +686,20 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["网站"], "openai.com、blog.google")
+
+    def test_intake_check_strips_trailing_keyword_punctuation(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI。,Gemini！",
+            "--site",
+            "openai.com",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["关键词"], "OpenAI、Gemini")
 
     def test_intake_check_deduplicates_keywords_case_insensitively(self) -> None:
         result = self.run_script(
@@ -1781,6 +1810,32 @@ class NewsDigestScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 网站：openai.com、blog.google", result.stdout)
+
+    def test_render_digest_strips_trailing_keyword_punctuation(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--keywords",
+            "OpenAI。,Gemini！",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 关键词：OpenAI、Gemini", result.stdout)
+        self.assertNotIn("- 关键词：OpenAI。、Gemini！", result.stdout)
 
     def test_render_digest_derives_source_domain_from_trailing_dot_url(self) -> None:
         input_path = self.write_json(
