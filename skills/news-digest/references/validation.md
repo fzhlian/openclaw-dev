@@ -158,6 +158,7 @@ python3 skills/news-digest/scripts/filter_results.py \
 - `summary.input` 为 `4`
 - `summary.kept` 为 `2`
 - `summary.dropped` 为 `2`
+- 若同一站点以完整 URL 与主域名重复传入，输出载荷中的 `sites` 也只应保留一次归一化后的主域名
 - `bbc.com` 主域与子域结果都能保留
 - 重复 URL 会被丢弃
 - 不在目标域名内的结果会被丢弃

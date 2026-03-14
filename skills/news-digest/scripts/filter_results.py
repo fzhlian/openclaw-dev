@@ -139,7 +139,7 @@ def normalize_result_item(item: dict) -> dict:
 
 
 def filter_results(results: list[dict], sites: list[str], auto_normalize: bool = False) -> dict[str, object]:
-    domains = [normalize_site(site) for site in sites]
+    domains = list(dict.fromkeys(normalize_site(site) for site in sites))
     seen_urls: set[str] = set()
     seen_titles_by_domain: dict[str, set[str]] = {}
     kept: list[dict] = []

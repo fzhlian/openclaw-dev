@@ -502,6 +502,21 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["summary"]["kept"], 2)
 
+    def test_filter_results_deduplicates_sites_after_normalization(self) -> None:
+        input_path = self.write_json(
+            [{"title": "BBC One", "url": "https://www.bbc.com/news/a", "snippet": "1"}]
+        )
+        result = self.run_script(
+            "filter_results.py",
+            "--input",
+            input_path,
+            "--site",
+            "https://www.bbc.com/news/a,bbc.com",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["sites"], ["bbc.com"])
+
     def test_render_digest_rejects_missing_url(self) -> None:
         input_path = self.write_json({"results": [{"title": "No URL", "snippet": "missing"}]})
         result = self.run_script("render_digest.py", "--input", input_path)
