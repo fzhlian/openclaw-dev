@@ -47,6 +47,11 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertIn("Iran", payload["keywordPlan"]["world.bbc.com"])
 
+    def test_build_query_rejects_non_domain_site(self) -> None:
+        result = self.run_script("build_query.py", "-k", "OpenAI", "-s", "BBC")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("站点需使用域名，如 bbc.com；收到: BBC", result.stderr)
+
     def test_intake_check_confirm_includes_frequency_and_default_language(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -166,6 +171,14 @@ class NewsDigestScriptTests(unittest.TestCase):
         normalized_urls = [item["normalizedUrl"] for item in payload["results"]]
         self.assertIn("https://example.com/post?id=1", normalized_urls)
         self.assertIn("https://example.com/post?id=2", normalized_urls)
+
+    def test_filter_results_rejects_non_domain_site(self) -> None:
+        input_path = self.write_json(
+            [{"title": "One", "url": "https://www.bbc.com/news/a", "snippet": "1"}]
+        )
+        result = self.run_script("filter_results.py", "--input", input_path, "--site", "BBC")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("站点需使用域名，如 bbc.com；收到: BBC", result.stderr)
 
     def test_render_digest_rejects_missing_url(self) -> None:
         input_path = self.write_json({"results": [{"title": "No URL", "snippet": "missing"}]})

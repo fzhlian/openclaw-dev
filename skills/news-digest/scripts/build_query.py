@@ -70,6 +70,8 @@ def normalize_site(site: str) -> str:
         candidate = candidate[4:]
     if not candidate:
         raise ValueError(f"无效站点: {site}")
+    if "." not in candidate:
+        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {site}")
     return candidate
 
 

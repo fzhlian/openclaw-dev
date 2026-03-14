@@ -50,6 +50,7 @@ python3 skills/news-digest/scripts/intake_check.py \
 - 若用户传入不支持的 `--output-mode`，应直接报错，而不是静默回退到默认模式
 - 若用户传入非中文 `--language`，应直接报错，而不是继续假装支持其他输出语言
 - 不应再要求补问
+- 若用户给的是媒体名而非域名，应先在进入查询/过滤脚本前完成域名归一化，不能把 `BBC` 之类裸名称直接往下传
 
 ## 验证 2：查询生成脚本
 
@@ -66,6 +67,19 @@ python3 skills/news-digest/scripts/build_query.py \
 - 输出若干 `site:<domain> <keyword>` 查询
 - 不自动扩词
 - 不自动英文化
+
+### 非域名站点输入
+
+```bash
+python3 skills/news-digest/scripts/build_query.py \
+  -k "OpenAI" \
+  -s "BBC"
+```
+
+预期：
+
+- 直接报错，提示站点需使用域名，如 `bbc.com`
+- 不输出 `site:bbc ...` 这类无效查询
 
 ### 显式扩词 + 英文化
 
@@ -131,6 +145,19 @@ python3 skills/news-digest/scripts/filter_results.py \
 - `bbc.com` 主域与子域结果都能保留
 - 重复 URL 会被丢弃
 - 不在目标域名内的结果会被丢弃
+
+### 非域名站点输入
+
+```bash
+python3 skills/news-digest/scripts/filter_results.py \
+  --input sample-results.json \
+  --site "BBC"
+```
+
+预期：
+
+- 直接报错，提示站点需使用域名，如 `bbc.com`
+- 不应把 `BBC` 静默归一化成 `bbc`
 
 ## 验证 4：结果归一化与摘要收口
 
