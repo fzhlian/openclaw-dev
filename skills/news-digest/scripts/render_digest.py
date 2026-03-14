@@ -13,6 +13,7 @@ DEFAULT_LIMITATIONS = "来源受限、时间缺失或覆盖不足时，结论仅
 DEFAULT_NEXT_STEP = "如需更高覆盖，可放宽时间范围、补充来源或显式开启扩词。"
 GROUPED_OUTPUT_MODE = "按主题分组+逐条"
 FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
+DEFAULT_LANGUAGE = "中文"
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 
 
@@ -124,6 +125,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
         f"- 时间范围：{args.time_range or '（未提供）'}",
         f"- 结果数：{args.limit if args.limit is not None else '（未提供）'}",
         f"- 输出模式：{args.output_mode or FLAT_OUTPUT_MODE}",
+        f"- 输出语言：{args.language or DEFAULT_LANGUAGE}",
     ]
 
 
@@ -207,6 +209,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--time-range", default="", help="时间范围，展示在参数区")
     parser.add_argument("--limit", type=int, help="结果数，展示在参数区")
     parser.add_argument("--output-mode", default=FLAT_OUTPUT_MODE, help="输出模式；支持平铺或按主题分组")
+    parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，默认中文")
     parser.add_argument("--overview-limit", type=int, default=3, help="摘要总览条数，默认 3")
     parser.add_argument("--limitations", default=DEFAULT_LIMITATIONS, help="局限说明")
     parser.add_argument("--next-step", default=DEFAULT_NEXT_STEP, help="下一步建议")
