@@ -126,12 +126,46 @@ python3 skills/news-digest/scripts/filter_results.py \
 - 重复 URL 会被丢弃
 - 不在目标域名内的结果会被丢弃
 
+## 验证 4：结果归一化与摘要收口
+
+准备一个最小样例文件 `sample-normalized-results.json`：
+
+```json
+[
+  {
+    "title": "OpenAI policy update",
+    "url": "https://openai.com/index/policy-update",
+    "description": "policy summary from search result"
+  },
+  {
+    "title": "OpenAI roadmap note",
+    "url": "https://openai.com/index/roadmap",
+    "summary": "roadmap summary",
+    "published_at": "2026-03-14"
+  }
+]
+```
+
+执行前先按 `references/result-schema.md` 做字段归一化，至少映射为：
+
+- `description` / `summary` -> `snippet`
+- `published_at` -> `publishedAt`
+- `sourceDomain` 缺失时由 URL 提取
+
+归一化后的结果再进入过滤与摘要阶段，预期：
+
+- 两条结果都能保留链接
+- 第一条时间缺失，最终输出时标注“时间未标注”
+- 摘要应只基于归一化并过滤后的结果，不直接混用原始搜索字段
+
 ## 回归检查
 
 修改 `SKILL.md` 后，再检查以下约束仍成立：
 
 1. 未确认参数前，不直接进入检索
 2. `--expand` / `--auto-english` 只在必要时显式开启
-3. 查询生成后，可先对候选结果做域名过滤与去重，再进入摘要
-4. 结果不足时，先放宽时间范围，再扩词，再英文化，最后才放宽站点
-5. 最终输出仍要求逐条附链接，并明确局限
+3. 查询生成后，先将候选结果归一化，再做域名过滤与去重，再进入摘要
+4. 摘要阶段只基于过滤后的结果，不直接混用原始搜索结果
+5. 缺失 `publishedAt` 时，最终输出明确标注“时间未标注”
+6. 结果不足时，先放宽时间范围，再扩词，再英文化，最后才放宽站点
+7. 最终输出仍要求逐条附链接，并明确局限
