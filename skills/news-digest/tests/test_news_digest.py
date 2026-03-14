@@ -572,6 +572,14 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("读取输入 JSON 失败: .", result.stderr)
 
+    def test_filter_results_reports_invalid_json(self) -> None:
+        handle = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+        with handle:
+            handle.write("not json")
+        result = self.run_script("filter_results.py", "--input", handle.name, "--site", "bbc.com")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"解析输入 JSON 失败: {handle.name}", result.stderr)
+
     def test_filter_results_splits_fullwidth_commas_in_sites(self) -> None:
         input_path = self.write_json(
             [
@@ -633,6 +641,14 @@ class NewsDigestScriptTests(unittest.TestCase):
         result = self.run_script("render_digest.py", "--input", ".")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("读取输入 JSON 失败: .", result.stderr)
+
+    def test_render_digest_reports_invalid_json(self) -> None:
+        handle = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+        with handle:
+            handle.write("not json")
+        result = self.run_script("render_digest.py", "--input", handle.name)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(f"解析输入 JSON 失败: {handle.name}", result.stderr)
 
     def test_render_digest_rejects_non_chinese_output_language(self) -> None:
         input_path = self.write_json(

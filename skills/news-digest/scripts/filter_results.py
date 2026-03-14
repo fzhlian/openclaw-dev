@@ -106,6 +106,8 @@ def load_results(path: str) -> list[dict]:
         data = json.loads(Path(path).read_text(encoding="utf-8"))
     except OSError as exc:
         raise ValueError(f"读取输入 JSON 失败: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"解析输入 JSON 失败: {path}") from exc
     if isinstance(data, list):
         return data
     if isinstance(data, dict) and isinstance(data.get("results"), list):
@@ -236,7 +238,7 @@ def main() -> int:
     try:
         results = load_results(args.input)
         payload = filter_results(results, sites, auto_normalize=args.normalize)
-    except (ValueError, json.JSONDecodeError) as exc:
+    except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 1
 
