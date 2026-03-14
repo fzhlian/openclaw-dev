@@ -112,7 +112,13 @@ def normalize_time_range(value: str) -> str:
 
 def split_csv(value: str) -> list[str]:
     items: list[str] = []
-    normalized = value.replace("，", ",").replace("、", ",").replace("；", ",").replace(";", ",")
+    normalized = (
+        value.replace("，", ",")
+        .replace("、", ",")
+        .replace("；", ",")
+        .replace(";", ",")
+        .replace("|", ",")
+    )
     for part in normalized.split(","):
         item = part.strip()
         if item:

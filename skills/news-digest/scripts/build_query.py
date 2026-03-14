@@ -40,7 +40,13 @@ CN_EXPANSIONS: dict[str, list[str]] = {
 def split_items(values: list[str]) -> list[str]:
     items: list[str] = []
     for value in values:
-        normalized = value.replace("，", ",").replace("、", ",").replace("；", ",").replace(";", ",")
+        normalized = (
+            value.replace("，", ",")
+            .replace("、", ",")
+            .replace("；", ",")
+            .replace(";", ",")
+            .replace("|", ",")
+        )
         for part in normalized.split(","):
             item = part.strip()
             if item:
