@@ -56,6 +56,7 @@ If you want to approve new exec requests directly from Telegram, enable `channel
 推荐先阅读：  
 Recommended reading:
 
+- [`docs/assets-inventory.md`](docs/assets-inventory.md)
 - [`docs/migration.md`](docs/migration.md)
 - [`docs/conventions.md`](docs/conventions.md)
 - [`docs/security-hardening.md`](docs/security-hardening.md)
