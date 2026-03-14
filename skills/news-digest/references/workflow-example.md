@@ -134,7 +134,7 @@ python3 skills/news-digest/scripts/filter_results.py \
 过滤后的结果进入最终输出时，建议按以下方式映射：
 
 - 标题：`title`
-- 摘要：基于 `snippet`
+- 摘要：优先 `snippetZh` / `summaryZh`，否则退回 `snippet`
 - 来源：`matchedDomain`
 - 时间：`publishedAt`，缺失则写“时间未标注”
 - 链接：`url`

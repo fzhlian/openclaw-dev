@@ -347,6 +347,30 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("OpenAI 发布了新的政策更新摘要", result.stdout)
         self.assertNotIn("policy summary from search result", result.stdout)
 
+    def test_render_digest_falls_back_to_original_summary_when_no_chinese_fields(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("policy summary from search result", result.stdout)
+        self.assertNotIn("OpenAI 发布了新的政策更新摘要", result.stdout)
+
     def test_render_digest_normalizes_natural_frequency_labels(self) -> None:
         input_path = self.write_json(
             {

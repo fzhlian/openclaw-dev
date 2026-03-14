@@ -208,6 +208,8 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 两条结果都保留原始链接
 - `## 检索参数` 中包含 `频率`
 - `## 检索参数` 中包含 `输出语言`，默认显示 `中文`
+- 若结果对象提供 `snippetZh` / `summaryZh`，应优先使用中文摘要字段
+- 若结果对象未提供中文摘要字段，可退回原始 `snippet` / `summary`，不要求脚本在渲染阶段强制翻译
 - 若传入不支持的 `--output-mode`，应直接报错，而不是继续输出平铺模板
 - 若传入非中文 `--language`，应直接报错，而不是继续输出中文模板
 - 输出结构与 `SKILL.md` 中的模板保持一致
