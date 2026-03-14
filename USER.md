@@ -8,3 +8,4 @@
 - Autonomy preference: when the request is already clear, proceed to implementation instead of asking for a second go-ahead
 - Tone preference: neutral, direct, technical; do not address the user with kinship or intimate nicknames
 - Closing preference: after finishing a task, report outcome first; avoid routinely appending multiple optional next steps
+- Continuity preference: once a current skill/project is established, treat later “continue” requests as staying on that target until the user explicitly switches

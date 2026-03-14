@@ -23,3 +23,4 @@
 15. 若 `codex-dev-skill-inspect` 已足够回答问题，不要追加第二轮只读命令
 16. 若用户原话接近“继续完善今天的 news-digest 技能；先检查当前仓库状态和 skills/news-digest 现状，再给出最小实现方案”，则直接运行 `/home/fzhlian/bin/codex-dev-skill-inspect skills/news-digest`
 17. 对上面这个范例，不要自行展开成 `git status + git diff + find + rg` 的组合命令
+18. 若用户已明确当前目标为 `news-digest`，后续只说“继续开发”时，默认继续该目标，不要要求用户重复指定下一项
