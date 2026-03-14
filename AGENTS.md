@@ -81,6 +81,7 @@
 - 若用户要求“切换项目 / 切换 skill / 切换 agent”，先在已知资产集合里做模糊匹配：仓库内 skill、可发布 skill、运行态已安装 skill、运行态 agent、workspace 配置都可作为候选
 - 若模糊匹配唯一命中，则切换到该目标；若命中多个候选，必须把候选列给用户选；若没有命中，必须明确说当前不存在这个项目/skill/agent，不能假定切换成功
 - 不要因为名字“看起来像”就切到一个并不存在的目标；项目切换的成功结论必须基于真实可见资产
+- 若用户说“切换到新闻项目”“切换到 news 方向”“切到 news 项目”这类表述，而当前可见候选里只有 `news-digest` 一项唯一命中，则直接切到 `news-digest`；不要停在“先切到 news 方向”这种半切换状态
 
 ## 推荐阅读顺序
 
@@ -108,6 +109,7 @@
 - 如果用户问“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”，默认先使用 `codex-dev-assets-inspect`，不要自己拼 `find skills ... && find ~/.openclaw/agents ...`
 - 对这类资产盘点问题，不要只查 `skills/`；必须同时覆盖 `skill/`、`~/.openclaw/skills`、`~/.openclaw/openclaw.json` 的 agent 列表，以及仓库 / 运行态 workspace 配置
 - 若项目切换需要确认候选集合，也优先从 `codex-dev-assets-inspect` 的结果里取 skill / agent / workspace 名称；不要凭记忆猜可切换目标
+- 对项目切换，不要自己拼 `find skills skill ... | rg ...` 这类检索命令来猜候选；优先使用 `codex-dev-assets-inspect`
 - 如果用户要把资产盘点结果整理成仓库内文档，预检查也应先从 `codex-dev-assets-inspect` 开始；只有在需要确认落盘位置时，才补最小目录/文件存在性检查
 - 对“帮我整理一份可放仓库的资产清单文档”这类请求，不要先展开成 `git status && find . && find .openclaw/workspaces ...` 这类多段只读命令链
 - 对“帮我整理成一份可放仓库的资产清单.md”这类请求，按写入型开发请求处理：Telegram 侧必须优先走 `codex-dev-dispatch`，不要在聊天里直接编辑、`git add`、`git commit`
@@ -115,6 +117,7 @@
 - 若已经给出具体可执行命令，而用户回复的是“同意 / 继续 / 可以 / 执行”，且当前还没有真实审批卡，就直接发起那张审批卡；不要让用户去批准一张还不存在的卡
 - 若用户已经明确要求继续开发，则完成必要预检查后直接进入实现、验证和汇报，不要把“最小方案”再次当成阻塞点
 - 若用户只说“继续开发”且当前活跃目标是 `news-digest`，则应默认先检查 `skills/news-digest` 现状，再自主选定下一步最小开发内容
+- 若用户已经明确说 `继续开发 news-digest` 或 `继续开发news-digest`，第一条且唯一的预检查命令应为 `codex-dev-skill-inspect skills/news-digest`；不要先发文件枚举、`python`、`find` 之类额外只读审批
 
 ## 审批稳定性
 
@@ -122,3 +125,4 @@
 - gateway 重启会使当前待审批 ID 失效，随后 Telegram 会报 `unknown or expired approval id`
 - 需要调整 agent、workspace、gateway 配置时，优先避开待审批窗口；必要时先让用户重新触发一次命令，再处理配置变更
 - 如果正在做“多轮连续开发对齐”测试，不要主动清空 Telegram session；否则新一轮会看不到上一条里刚给出的最小方案或上下文
+- 若审批单已经超时、被拒绝或返回 `unknown or expired approval id`，就把该审批视为失效；不要继续要求用户批准那个旧 ID，应改为重新发起一张新的真实审批卡或切换到仍然有效的下一步

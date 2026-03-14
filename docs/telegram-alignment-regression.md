@@ -174,6 +174,18 @@
 - 明确说明当前没有这个 skill / agent / 项目
 - 不伪造切换成功
 
+再测新闻模糊切换：
+
+```text
+切换到新闻项目
+```
+
+通过标准：
+
+- 不自己拼 `find ... | rg ...` 这类候选检索命令
+- 若唯一命中 `news-digest`，则直接切到 `news-digest`
+- 不停在“先切到 news 方向”这种半切换状态
+
 ### 4. Skill 预检查
 
 测试语句：
@@ -187,6 +199,18 @@
 - 预检查优先使用 `codex-dev-skill-inspect skills/news-digest`
 - 不展开成 `git status + git diff + find + rg` 长链
 - 回答基于真实仓库状态
+
+再测：
+
+```text
+继续开发news-digest
+```
+
+通过标准：
+
+- 第一条且唯一预检查审批应为 `codex-dev-skill-inspect skills/news-digest`
+- 不额外先发文件枚举、`python`、`find` 之类只读审批
+- 若第一张审批超时或失效，重新发新的真实审批卡，不继续引用旧 ID
 
 ### 5. 严格 Review
 

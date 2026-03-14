@@ -30,6 +30,10 @@
 22. 若用户说“审查代码”或“重新审查当前项目”，即使工作区干净，也继续查看最近提交或当前模块；不要停在 `git status`
 23. 若用户要切换 skill / agent / 项目，先做模糊匹配；唯一命中才切，多个命中就让用户选，零命中就直说不存在
 24. 切换项目时不要凭名字猜目标；候选集合优先来自 `codex-dev-assets-inspect`
-25. 若用户要“升级 codex-dev 并发布到 OpenClaw / ClawHub”，先只跑一次 `codex-dev-publish-inspect`；不要同时发多张审批卡
-26. 发布预检查只看 `skill/`、`README.md`、`CHANGELOG.md`；不要去查本仓库并不存在的 `package.json`
-27. 若发布失败是 `Version already exists` 或远端版本查询限流，先收敛到“确认下一个版本号”；不要在未确认前连续改多个候选版本
+25. 若用户说“切换到新闻项目 / news 方向”，且唯一命中的是 `news-digest`，则直接切到 `news-digest`；不要停在半切换状态
+26. 对项目切换不要自己拼 `find ... | rg ...` 这类候选检索；优先 `codex-dev-assets-inspect`
+27. 若用户已明确说 `继续开发 news-digest`，第一条且唯一预检查就是 `codex-dev-skill-inspect skills/news-digest`；不要额外发文件枚举审批
+28. 若用户要“升级 codex-dev 并发布到 OpenClaw / ClawHub”，先只跑一次 `codex-dev-publish-inspect`；不要同时发多张审批卡
+29. 发布预检查只看 `skill/`、`README.md`、`CHANGELOG.md`；不要去查本仓库并不存在的 `package.json`
+30. 若发布失败是 `Version already exists` 或远端版本查询限流，先收敛到“确认下一个版本号”；不要在未确认前连续改多个候选版本
+31. 若某张审批已经超时、被拒绝或报 `unknown or expired approval id`，不要再让用户批准旧 ID；应重新发起新的真实审批
