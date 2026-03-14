@@ -19,10 +19,10 @@
 ## 快速开始 | Quick Start
 
 ```bash
-/home/fzhlian/Code/codex-dev/bin/codex-help
-/home/fzhlian/Code/codex-dev/bin/codex-dev "修复一个小问题并总结修改"
-/home/fzhlian/Code/codex-dev/bin/codex-dev-status <job-id>
-/home/fzhlian/Code/codex-dev/bin/codex-dev-show <job-id>
+./bin/codex-help
+./bin/codex-dev "修复一个小问题并总结修改"
+./bin/codex-dev-status <job-id>
+./bin/codex-dev-show <job-id>
 ```
 
 ## 项目结构 | Project Structure
@@ -40,8 +40,8 @@
 推荐先阅读：  
 Recommended reading:
 
-- [docs/migration.md](/home/fzhlian/Code/codex-dev/docs/migration.md)
-- [docs/conventions.md](/home/fzhlian/Code/codex-dev/docs/conventions.md)
+- [`docs/migration.md`](docs/migration.md)
+- [`docs/conventions.md`](docs/conventions.md)
 
 ## 本地安装映射 | Local Install Mapping
 
@@ -59,17 +59,23 @@ The following local entrypoints should resolve to this project:
 
 ## 发布 | Publishing
 
-发布源目录：`/home/fzhlian/Code/codex-dev/skill`  
-Publish source directory: `/home/fzhlian/Code/codex-dev/skill`
+发布源目录：`skill/`  
+Publish source directory: `skill/`
 
 示例：  
 Example:
 
 ```bash
-clawhub publish /home/fzhlian/Code/codex-dev/skill --slug codex-dev --version 0.1.1
+clawhub publish ./skill --slug codex-dev --version 0.1.1
 ```
 
 ## 文档规范 | Documentation Policy
 
 本项目约定所有 Markdown 文档默认采用中英文双语。  
 This project requires all Markdown documentation to be maintained in Chinese and English by default.
+
+## 相关文档 | Related Docs
+
+- [`skill/SKILL.md`](skill/SKILL.md)
+- [`skill/references/local-setup.md`](skill/references/local-setup.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
