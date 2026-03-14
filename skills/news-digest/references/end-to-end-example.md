@@ -155,3 +155,4 @@ python3 skills/news-digest/scripts/render_digest.py \
 - 多主题分组摘要
 - 多站点混合聚合后的排序策略
 - 更复杂的摘要压缩或主题归纳
+- 搜索 provider 只能返回主题方向、却拿不到稳定原文链接时的降级输出（该场景改看 `references/validation.md` 的“缺少稳定链接时必须降级”）
