@@ -107,6 +107,7 @@ def split_items(values: list[str]) -> list[str]:
             .replace("；", ",")
             .replace(";", ",")
             .replace("|", ",")
+            .replace("／", ",")
             .replace(" / ", ",")
         )
         for part in normalized.split(","):

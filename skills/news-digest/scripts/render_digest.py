@@ -118,6 +118,7 @@ def split_csv(value: str) -> list[str]:
         .replace("；", ",")
         .replace(";", ",")
         .replace("|", ",")
+        .replace("／", ",")
         .replace(" / ", ",")
     )
     for part in normalized.split(","):
