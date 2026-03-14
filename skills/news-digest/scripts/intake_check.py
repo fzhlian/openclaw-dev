@@ -134,7 +134,7 @@ def normalize_time_range(value: str) -> str:
 
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = split_csv(args.topic)
-    sites = [normalize_site(site) for site in split_csv(args.site)]
+    sites = list(dict.fromkeys(normalize_site(site) for site in split_csv(args.site)))
     return {
         "topics": topics,
         "sites": sites,

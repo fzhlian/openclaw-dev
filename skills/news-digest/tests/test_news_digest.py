@@ -320,6 +320,20 @@ class NewsDigestScriptTests(unittest.TestCase):
             "bbc.com、rfi.fr、nytimes.com、dw.com、wallstreetcn.com",
         )
 
+    def test_intake_check_deduplicates_sites_after_normalization(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "BBC,bbc.com",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["网站"], "bbc.com")
+
     def test_intake_check_splits_fullwidth_commas(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -835,6 +849,32 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 关键词：OpenAI、Gemini", result.stdout)
         self.assertIn("- 网站：openai.com、blog.google", result.stdout)
+
+    def test_render_digest_deduplicates_sites_after_normalization(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--sites",
+            "https://www.openai.com/index/policy,openai.com",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 网站：openai.com", result.stdout)
+        self.assertNotIn("- 网站：openai.com、openai.com", result.stdout)
 
     def test_render_digest_normalizes_fullwidth_commas_in_parameter_block(self) -> None:
         input_path = self.write_json(

@@ -117,7 +117,8 @@ def normalize_topics_display(value: str) -> str:
 
 def normalize_sites_display(value: str) -> str:
     items = split_csv(value)
-    return "、".join(normalize_site(item) for item in items)
+    normalized = list(dict.fromkeys(normalize_site(item) for item in items))
+    return "、".join(normalized)
 
 
 def load_payload(path: str) -> dict:
