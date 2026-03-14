@@ -97,6 +97,21 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["queries"], ["site:openai.com OpenAI"])
         self.assertEqual(payload["keywordPlan"]["openai.com"], ["OpenAI"])
 
+    def test_build_query_normalizes_site_urls_with_default_ports(self) -> None:
+        result = self.run_script(
+            "build_query.py",
+            "-k",
+            "OpenAI",
+            "-s",
+            "https://www.openai.com:443/index/policy,openai.com:443",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["queries"], ["site:openai.com OpenAI"])
+        self.assertEqual(payload["keywordPlan"]["openai.com"], ["OpenAI"])
+
     def test_build_query_reports_invalid_list_file_path(self) -> None:
         result = self.run_script("build_query.py", "--keyword-file", ".", "-s", "openai.com")
         self.assertNotEqual(result.returncode, 0)
@@ -435,6 +450,20 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["网站"], "openai.com")
 
+    def test_intake_check_normalizes_site_urls_with_default_ports(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "https://www.openai.com:443/index/policy,openai.com:443",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["网站"], "openai.com")
+
     def test_intake_check_normalizes_common_media_aliases_to_domains(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -684,6 +713,22 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
         self.assertEqual(payload["sites"], ["bbc.com"])
+
+    def test_filter_results_normalizes_site_urls_with_default_ports(self) -> None:
+        input_path = self.write_json(
+            [{"title": "One", "url": "https://www.openai.com/index/policy", "snippet": "1"}]
+        )
+        result = self.run_script(
+            "filter_results.py",
+            "--input",
+            input_path,
+            "--site",
+            "https://www.openai.com:443/index/policy,openai.com:443",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["kept"], 1)
+        self.assertEqual(payload["sites"], ["openai.com"])
 
     def test_render_digest_rejects_missing_url(self) -> None:
         input_path = self.write_json({"results": [{"title": "No URL", "snippet": "missing"}]})

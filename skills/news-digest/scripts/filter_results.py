@@ -16,11 +16,9 @@ SOURCE_DOMAIN_KEYS = ("sourceDomain", "domain", "site", "source")
 
 
 def normalize_site(site: str) -> str:
-    candidate = site.strip().lower()
-    if "://" in candidate:
-        parsed = urlparse(candidate)
-        candidate = parsed.netloc or parsed.path
-    candidate = candidate.split("/")[0].strip()
+    raw = site.strip()
+    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
+    candidate = (parsed.hostname or "").strip().lower()
     if candidate.startswith("www."):
         candidate = candidate[4:]
     if not candidate:

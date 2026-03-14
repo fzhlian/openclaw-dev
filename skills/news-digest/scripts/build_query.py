@@ -89,11 +89,9 @@ def load_list_file(path: str) -> list[str]:
 
 
 def normalize_site(site: str) -> str:
-    candidate = site.strip()
-    if "://" in candidate:
-        parsed = urlparse(candidate)
-        candidate = parsed.netloc or parsed.path
-    candidate = candidate.split("/")[0].strip().lower()
+    raw = site.strip()
+    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
+    candidate = (parsed.hostname or "").strip().lower()
     if candidate.startswith("www."):
         candidate = candidate[4:]
     if not candidate:
