@@ -15,12 +15,14 @@ from news_digest_normalize import (
     GROUPED_OUTPUT_MODE,
     dedupe_casefolded_items,
     extract_results_payload,
+    join_display_items,
     load_json_file,
     normalize_frequency,
     normalize_host_value,
     normalize_limit_value,
     normalize_language,
     normalize_output_mode,
+    normalize_site_items,
     normalize_site_value,
     normalize_time_range,
     split_list_items,
@@ -58,13 +60,12 @@ def pick_source_label(item: dict) -> str:
 
 def normalize_topics_display(value: str) -> str:
     items = dedupe_keywords(split_csv(value))
-    return "、".join(items)
+    return join_display_items(items)
 
 
 def normalize_sites_display(value: str) -> str:
     items = split_csv(value)
-    normalized = list(dict.fromkeys(normalize_site_value(item) for item in items))
-    return "、".join(normalized)
+    return join_display_items(normalize_site_items(items))
 
 
 def load_payload(path: str) -> dict:

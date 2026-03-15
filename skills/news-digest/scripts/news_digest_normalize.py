@@ -240,6 +240,18 @@ def normalize_site_value(
     return candidate
 
 
+def normalize_site_items(
+    values: list[str],
+    *,
+    aliases: Mapping[str, str] | None = None,
+) -> list[str]:
+    return list(dict.fromkeys(normalize_site_value(value, aliases=aliases) for value in values))
+
+
+def join_display_items(items: list[str]) -> str:
+    return "、".join(items)
+
+
 def read_text_file(
     path: str,
     *,

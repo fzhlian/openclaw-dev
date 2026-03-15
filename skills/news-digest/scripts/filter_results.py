@@ -13,6 +13,7 @@ from news_digest_normalize import (
     extract_results_payload,
     load_json_file,
     normalize_host_value,
+    normalize_site_items,
     normalize_site_value,
     split_list_items,
 )
@@ -120,7 +121,7 @@ def normalize_result_item(item: dict) -> dict:
 
 
 def filter_results(results: list[dict], sites: list[str], auto_normalize: bool = False) -> dict[str, object]:
-    domains = list(dict.fromkeys(normalize_site_value(site) for site in sites))
+    domains = normalize_site_items(sites)
     seen_urls: set[str] = set()
     seen_titles_by_domain: dict[str, set[str]] = {}
     kept: list[dict] = []

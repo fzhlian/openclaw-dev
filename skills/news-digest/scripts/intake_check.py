@@ -15,9 +15,11 @@ from news_digest_normalize import (
     GROUPED_OUTPUT_MODE,
     MAX_LIMIT,
     dedupe_casefolded_items,
+    join_display_items,
     normalize_frequency,
     normalize_limit_value,
     normalize_language,
+    normalize_site_items,
     normalize_output_mode,
     normalize_site_value,
     normalize_time_range,
@@ -67,7 +69,7 @@ def ask_list(params: dict[str, Any]) -> list[str]:
 
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = dedupe_keywords(split_csv(args.topic))
-    sites = list(dict.fromkeys(normalize_site(site) for site in split_csv(args.site)))
+    sites = normalize_site_items(split_csv(args.site), aliases=SITE_ALIASES)
     return {
         "topics": topics,
         "sites": sites,
@@ -90,8 +92,8 @@ def to_confirm_block(params: dict[str, Any]) -> dict[str, str | int]:
     time_range = params["time_range"] or DEFAULT_TIME_RANGE
     output_mode = params["output_mode"] or FLAT_OUTPUT_MODE
     return {
-        "关键词": "、".join(params["topics"]) if params["topics"] else "（待确认）",
-        "网站": "、".join(params["sites"]) if params["sites"] else "（待确认）",
+        "关键词": join_display_items(params["topics"]) if params["topics"] else "（待确认）",
+        "网站": join_display_items(params["sites"]) if params["sites"] else "（待确认）",
         "时间范围": time_range,
         "频率": params["frequency"] or "（待确认）",
         "结果数": params["limit"],
