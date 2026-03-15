@@ -11,6 +11,8 @@ from urllib.parse import urlparse
 
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
+DEFAULT_LIMIT = 5
+MAX_LIMIT = 20
 
 EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
 PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
@@ -265,3 +267,23 @@ def load_json_file(
         return json.loads(content)
     except json.JSONDecodeError as exc:
         raise ValueError(f"{parse_error_prefix}: {path}") from exc
+
+
+def normalize_limit_value(value: int | None, *, default_limit: int = DEFAULT_LIMIT) -> int:
+    return default_limit if value is None else value
+
+
+def validate_limit_value(
+    value: int | None,
+    *,
+    max_limit: int = MAX_LIMIT,
+    allow_none: bool = False,
+) -> None:
+    if value is None:
+        if allow_none:
+            return
+        raise ValueError("--limit 缺失")
+    if value < 1:
+        raise ValueError("--limit 必须 >= 1")
+    if value > max_limit:
+        raise ValueError(f"--limit 必须 <= {max_limit}")

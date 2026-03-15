@@ -7,22 +7,23 @@ import argparse
 import sys
 
 from news_digest_normalize import (
+    DEFAULT_LIMIT,
     DEFAULT_LANGUAGE,
+    MAX_LIMIT,
     dedupe_casefolded_items,
     load_json_file,
     SUPPORTED_FREQUENCIES,
     SUPPORTED_LANGUAGE,
     normalize_frequency,
     normalize_host_value,
+    normalize_limit_value,
     normalize_language,
     normalize_output_mode,
     normalize_site_value,
     normalize_time_range,
     split_list_items,
+    validate_limit_value,
 )
-
-DEFAULT_LIMIT = 5
-MAX_LIMIT = 20
 DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_TIME_LABEL = "时间未标注"
 DEFAULT_LIMITATIONS = "来源受限、时间缺失或覆盖不足时，结论仅基于当前检索结果。"
@@ -188,7 +189,7 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
     time_range = normalize_time_range(args.time_range) or DEFAULT_TIME_RANGE
     keywords = normalize_topics_display(args.keywords)
     sites = normalize_sites_display(args.sites)
-    limit = args.limit if args.limit is not None else DEFAULT_LIMIT
+    limit = normalize_limit_value(args.limit, default_limit=DEFAULT_LIMIT)
     language = normalize_language(args.language)
     return [
         "## 检索参数",
@@ -259,7 +260,7 @@ def build_markdown(payload: dict, args: argparse.Namespace) -> str:
         grouped_output_mode=GROUPED_OUTPUT_MODE,
         default_on_blank=FLAT_OUTPUT_MODE,
     )
-    effective_limit = args.limit if args.limit is not None else DEFAULT_LIMIT
+    effective_limit = normalize_limit_value(args.limit, default_limit=DEFAULT_LIMIT)
     results = results[:effective_limit]
 
     if force_degraded or not results:
@@ -308,11 +309,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.limit is not None and args.limit < 1:
-        print("--limit 必须 >= 1", file=sys.stderr)
-        return 1
-    if args.limit is not None and args.limit > MAX_LIMIT:
-        print(f"--limit 必须 <= {MAX_LIMIT}", file=sys.stderr)
+    try:
+        validate_limit_value(args.limit, max_limit=MAX_LIMIT, allow_none=True)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
         return 1
     if args.overview_limit < 1:
         print("--overview-limit 必须 >= 1", file=sys.stderr)

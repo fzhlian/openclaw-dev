@@ -8,20 +8,21 @@ import json
 from typing import Any
 
 from news_digest_normalize import (
+    DEFAULT_LIMIT,
     DEFAULT_LANGUAGE,
+    MAX_LIMIT,
     dedupe_casefolded_items,
     SUPPORTED_FREQUENCIES,
     SUPPORTED_LANGUAGE,
     normalize_frequency,
+    normalize_limit_value,
     normalize_language,
     normalize_output_mode,
     normalize_site_value,
     normalize_time_range,
     split_list_items,
+    validate_limit_value,
 )
-
-DEFAULT_LIMIT = 5
-MAX_LIMIT = 20
 DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 GROUPED_OUTPUT_MODE = "按主题分组+逐条"
@@ -72,7 +73,7 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
         "sites": sites,
         "time_range": normalize_time_range(args.time_range),
         "frequency": normalize_frequency(args.frequency),
-        "limit": args.limit,
+        "limit": normalize_limit_value(args.limit),
         "output_mode": normalize_output_mode(
             args.output_mode,
             flat_output_mode=DEFAULT_OUTPUT_MODE,
@@ -155,10 +156,10 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    if args.limit < 1:
-        raise SystemExit("--limit 必须 >= 1")
-    if args.limit > MAX_LIMIT:
-        raise SystemExit(f"--limit 必须 <= {MAX_LIMIT}")
+    try:
+        validate_limit_value(args.limit, max_limit=MAX_LIMIT)
+    except ValueError as exc:
+        raise SystemExit(str(exc))
     try:
         split_sites = split_csv(args.site)
         for site in split_sites:
