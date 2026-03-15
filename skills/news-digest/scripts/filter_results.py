@@ -10,12 +10,11 @@ import sys
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse
 
+from news_digest_normalize import SITE_EDGE_PUNCTUATION, split_list_items
+
 SNIPPET_KEYS = ("snippet", "description", "summary", "content")
 PUBLISHED_AT_KEYS = ("publishedAt", "published_at", "date", "time")
 SOURCE_DOMAIN_KEYS = ("sourceDomain", "domain", "site", "source")
-SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？\"'“”‘’()（）[]【】<>《》"
-
-
 def normalize_site(site: str) -> str:
     raw = site.strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
@@ -100,22 +99,7 @@ def normalize_title(title: str) -> str:
 
 
 def split_items(values: list[str]) -> list[str]:
-    items: list[str] = []
-    for value in values:
-        normalized = (
-            value.replace("，", ",")
-            .replace("、", ",")
-            .replace("；", ",")
-            .replace(";", ",")
-            .replace("|", ",")
-            .replace("／", ",")
-        )
-        normalized = re.sub(r"\s+/\s*|\s*/\s+", ",", normalized)
-        for part in normalized.split(","):
-            item = part.strip()
-            if item:
-                items.append(item)
-    return list(dict.fromkeys(items))
+    return split_list_items(values)
 
 
 def load_results(path: str) -> list[dict]:

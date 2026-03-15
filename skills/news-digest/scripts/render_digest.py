@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -13,12 +12,15 @@ from urllib.parse import urlparse
 from news_digest_normalize import (
     DEFAULT_LANGUAGE,
     EDGE_WRAPPER_PUNCTUATION,
+    KEYWORD_EDGE_PUNCTUATION,
+    SITE_EDGE_PUNCTUATION,
     SUPPORTED_FREQUENCIES,
     SUPPORTED_LANGUAGE,
     normalize_frequency,
     normalize_language,
     normalize_output_mode,
     normalize_time_range,
+    split_list_items,
 )
 
 DEFAULT_LIMIT = 5
@@ -32,26 +34,8 @@ FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 SUPPORTED_OUTPUT_MODES = (FLAT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
-KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
-SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
-
-
 def split_csv(value: str) -> list[str]:
-    items: list[str] = []
-    normalized = (
-        value.replace("，", ",")
-        .replace("、", ",")
-        .replace("；", ",")
-        .replace(";", ",")
-        .replace("|", ",")
-        .replace("／", ",")
-    )
-    normalized = re.sub(r"\s+/\s*|\s*/\s+", ",", normalized)
-    for part in normalized.split(","):
-        item = part.strip()
-        if item:
-            items.append(item)
-    return list(dict.fromkeys(items))
+    return split_list_items([value])
 
 
 def dedupe_keywords(items: list[str]) -> list[str]:

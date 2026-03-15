@@ -5,10 +5,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
+
+from news_digest_normalize import (
+    KEYWORD_EDGE_PUNCTUATION,
+    SITE_EDGE_PUNCTUATION,
+    split_list_items,
+)
 
 ENGLISH_DOMAINS = {
     "bbc.com",
@@ -36,28 +41,8 @@ CN_EXPANSIONS: dict[str, list[str]] = {
     "战争": ["冲突", "战事", "军事打击"],
     "ai": ["人工智能", "机器学习", "大模型"],
 }
-EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
-KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
-SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
-
-
 def split_items(values: list[str]) -> list[str]:
-    items: list[str] = []
-    for value in values:
-        normalized = (
-            value.replace("，", ",")
-            .replace("、", ",")
-            .replace("；", ",")
-            .replace(";", ",")
-            .replace("|", ",")
-            .replace("／", ",")
-        )
-        normalized = re.sub(r"\s+/\s*|\s*/\s+", ",", normalized)
-        for part in normalized.split(","):
-            item = part.strip()
-            if item:
-                items.append(item)
-    return items
+    return split_list_items(values, dedupe=False)
 
 
 def dedupe_keywords(items: list[str]) -> list[str]:

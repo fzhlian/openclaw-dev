@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+import re
+
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
 
 EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
 PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
+KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
+SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
 
 FLAT_OUTPUT_MODE_ALIASES = {"摘要总览+逐条清单", "摘要总览+逐条", "总览+逐条"}
 GROUPED_OUTPUT_MODE_ALIASES = {"按主题分组+逐条", "按主题分组+逐条清单", "分组+逐条"}
@@ -162,3 +166,22 @@ def normalize_frequency(value: str) -> str:
 
 def normalize_language(value: str, *, default_language: str = DEFAULT_LANGUAGE) -> str:
     return value.strip().strip(PARAM_EDGE_PUNCTUATION) or default_language
+
+
+def split_list_items(values: list[str], *, dedupe: bool = True) -> list[str]:
+    items: list[str] = []
+    for value in values:
+        normalized = (
+            value.replace("，", ",")
+            .replace("、", ",")
+            .replace("；", ",")
+            .replace(";", ",")
+            .replace("|", ",")
+            .replace("／", ",")
+        )
+        normalized = re.sub(r"\s+/\s*|\s*/\s+", ",", normalized)
+        for part in normalized.split(","):
+            item = part.strip()
+            if item:
+                items.append(item)
+    return list(dict.fromkeys(items)) if dedupe else items
