@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 from news_digest_normalize import (
-    KEYWORD_EDGE_PUNCTUATION,
+    dedupe_casefolded_items,
     normalize_site_value,
     split_list_items,
 )
@@ -47,33 +47,11 @@ def split_items(values: list[str]) -> list[str]:
 
 
 def dedupe_keywords(items: list[str]) -> list[str]:
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for item in items:
-        normalized = item.strip().strip(KEYWORD_EDGE_PUNCTUATION)
-        if not normalized:
-            continue
-        marker = normalized.casefold()
-        if marker in seen:
-            continue
-        seen.add(marker)
-        deduped.append(normalized)
-    return deduped
+    return dedupe_casefolded_items(items)
 
 
 def dedupe_excludes(items: list[str]) -> list[str]:
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for item in items:
-        normalized = item.strip().strip(KEYWORD_EDGE_PUNCTUATION)
-        if not normalized:
-            continue
-        marker = normalized.casefold()
-        if marker in seen:
-            continue
-        seen.add(marker)
-        deduped.append(normalized)
-    return deduped
+    return dedupe_casefolded_items(items)
 
 
 def load_list_file(path: str) -> list[str]:

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from news_digest_normalize import (
     DEFAULT_LANGUAGE,
-    KEYWORD_EDGE_PUNCTUATION,
+    dedupe_casefolded_items,
     SUPPORTED_FREQUENCIES,
     SUPPORTED_LANGUAGE,
     normalize_frequency,
@@ -40,18 +40,7 @@ def split_csv(value: str) -> list[str]:
 
 
 def dedupe_keywords(items: list[str]) -> list[str]:
-    deduped: list[str] = []
-    seen: set[str] = set()
-    for item in items:
-        normalized = item.strip().strip(KEYWORD_EDGE_PUNCTUATION)
-        if not normalized:
-            continue
-        marker = normalized.casefold()
-        if marker in seen:
-            continue
-        seen.add(marker)
-        deduped.append(normalized)
-    return deduped
+    return dedupe_casefolded_items(items)
 
 
 def pick_source_label(item: dict) -> str:

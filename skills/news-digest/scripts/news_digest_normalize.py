@@ -189,6 +189,25 @@ def split_list_items(values: list[str], *, dedupe: bool = True) -> list[str]:
     return list(dict.fromkeys(items)) if dedupe else items
 
 
+def dedupe_casefolded_items(
+    items: list[str],
+    *,
+    strip_chars: str = KEYWORD_EDGE_PUNCTUATION,
+) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        normalized = item.strip().strip(strip_chars)
+        if not normalized:
+            continue
+        marker = normalized.casefold()
+        if marker in seen:
+            continue
+        seen.add(marker)
+        deduped.append(normalized)
+    return deduped
+
+
 def normalize_host_value(value: str) -> str:
     raw = str(value).strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
