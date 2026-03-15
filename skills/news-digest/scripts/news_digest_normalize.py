@@ -271,6 +271,14 @@ def load_json_file(
         raise ValueError(f"{parse_error_prefix}: {path}") from exc
 
 
+def extract_results_payload(data):
+    if isinstance(data, dict) and isinstance(data.get("results"), list):
+        return {"results": data["results"], "payload": data}
+    if isinstance(data, list):
+        return {"results": data, "payload": {"results": data}}
+    raise ValueError("输入 JSON 必须是结果数组，或包含 results 数组")
+
+
 def normalize_limit_value(value: int | None, *, default_limit: int = DEFAULT_LIMIT) -> int:
     return default_limit if value is None else value
 

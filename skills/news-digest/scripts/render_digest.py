@@ -14,6 +14,7 @@ from news_digest_normalize import (
     FLAT_OUTPUT_MODE,
     GROUPED_OUTPUT_MODE,
     dedupe_casefolded_items,
+    extract_results_payload,
     load_json_file,
     normalize_frequency,
     normalize_host_value,
@@ -68,11 +69,7 @@ def normalize_sites_display(value: str) -> str:
 
 def load_payload(path: str) -> dict:
     data = load_json_file(path)
-    if isinstance(data, dict) and isinstance(data.get("results"), list):
-        return data
-    if isinstance(data, list):
-        return {"results": data}
-    raise ValueError("输入 JSON 必须是结果数组，或包含 results 数组")
+    return extract_results_payload(data)["payload"]
 
 
 def render_overview(results: list[dict], max_items: int) -> list[str]:

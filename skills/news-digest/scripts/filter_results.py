@@ -10,6 +10,7 @@ import sys
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 from news_digest_normalize import (
+    extract_results_payload,
     load_json_file,
     normalize_host_value,
     normalize_site_value,
@@ -87,11 +88,7 @@ def split_items(values: list[str]) -> list[str]:
 
 def load_results(path: str) -> list[dict]:
     data = load_json_file(path)
-    if isinstance(data, list):
-        return data
-    if isinstance(data, dict) and isinstance(data.get("results"), list):
-        return data["results"]
-    raise ValueError("输入 JSON 必须是结果数组，或包含 results 数组")
+    return extract_results_payload(data)["results"]
 
 
 def first_nonempty(item: dict, keys: tuple[str, ...]) -> str:
