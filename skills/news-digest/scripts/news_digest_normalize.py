@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
+from urllib.parse import urlparse
 
 DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
@@ -185,3 +187,29 @@ def split_list_items(values: list[str], *, dedupe: bool = True) -> list[str]:
             if item:
                 items.append(item)
     return list(dict.fromkeys(items)) if dedupe else items
+
+
+def normalize_host_value(value: str) -> str:
+    raw = str(value).strip().strip(SITE_EDGE_PUNCTUATION)
+    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
+    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
+    if candidate.startswith("www."):
+        candidate = candidate[4:]
+    return candidate
+
+
+def normalize_site_value(
+    value: str,
+    *,
+    aliases: Mapping[str, str] | None = None,
+) -> str:
+    candidate = normalize_host_value(value)
+    if not candidate:
+        raise ValueError(f"无效站点: {value}")
+    if aliases:
+        alias = aliases.get(candidate)
+        if alias:
+            return alias
+    if "." not in candidate:
+        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {value}")
+    return candidate

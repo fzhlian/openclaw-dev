@@ -7,11 +7,10 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
 
 from news_digest_normalize import (
     KEYWORD_EDGE_PUNCTUATION,
-    SITE_EDGE_PUNCTUATION,
+    normalize_site_value,
     split_list_items,
 )
 
@@ -41,6 +40,8 @@ CN_EXPANSIONS: dict[str, list[str]] = {
     "战争": ["冲突", "战事", "军事打击"],
     "ai": ["人工智能", "机器学习", "大模型"],
 }
+
+
 def split_items(values: list[str]) -> list[str]:
     return split_list_items(values, dedupe=False)
 
@@ -90,19 +91,6 @@ def load_list_file(path: str) -> list[str]:
             continue
         items.extend(split_items([row]))
     return items
-
-
-def normalize_site(site: str) -> str:
-    raw = site.strip().strip(SITE_EDGE_PUNCTUATION)
-    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
-    if candidate.startswith("www."):
-        candidate = candidate[4:]
-    if not candidate:
-        raise ValueError(f"无效站点: {site}")
-    if "." not in candidate:
-        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {site}")
-    return candidate
 
 
 def is_english_site(domain: str) -> bool:
@@ -158,7 +146,7 @@ def build_queries(
     keyword_plan: dict[str, list[str]] = {}
 
     for site in sites:
-        domain = normalize_site(site)
+        domain = normalize_site_value(site)
         english_mode = auto_english and is_english_site(domain)
         words = expand_keywords(keywords, english_mode) if auto_expand else keywords
         keyword_plan[domain] = words

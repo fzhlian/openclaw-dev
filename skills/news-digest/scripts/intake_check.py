@@ -6,18 +6,16 @@ from __future__ import annotations
 import argparse
 import json
 from typing import Any
-from urllib.parse import urlparse
 
 from news_digest_normalize import (
     DEFAULT_LANGUAGE,
-    EDGE_WRAPPER_PUNCTUATION,
     KEYWORD_EDGE_PUNCTUATION,
-    SITE_EDGE_PUNCTUATION,
     SUPPORTED_FREQUENCIES,
     SUPPORTED_LANGUAGE,
     normalize_frequency,
     normalize_language,
     normalize_output_mode,
+    normalize_site_value,
     normalize_time_range,
     split_list_items,
 )
@@ -41,6 +39,8 @@ SITE_ALIASES = {
     "华尔街见闻": "wallstreetcn.com",
     "華爾街見聞": "wallstreetcn.com",
 }
+
+
 def split_csv(values: list[str]) -> list[str]:
     return split_list_items(values)
 
@@ -61,19 +61,7 @@ def dedupe_keywords(items: list[str]) -> list[str]:
 
 
 def normalize_site(site: str) -> str:
-    raw = site.strip().strip(SITE_EDGE_PUNCTUATION)
-    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
-    if candidate.startswith("www."):
-        candidate = candidate[4:]
-    if not candidate:
-        raise ValueError(f"无效站点: {site}")
-    alias = SITE_ALIASES.get(candidate)
-    if alias:
-        return alias
-    if "." not in candidate:
-        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {site}")
-    return candidate
+    return normalize_site_value(site, aliases=SITE_ALIASES)
 
 
 def ask_list(params: dict[str, Any]) -> list[str]:
@@ -85,6 +73,7 @@ def ask_list(params: dict[str, Any]) -> list[str]:
     if not params["frequency"]:
         asks.append("这是一次性检索，还是要做日报/周报模板？")
     return asks
+
 
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = dedupe_keywords(split_csv(args.topic))

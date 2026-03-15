@@ -10,32 +10,15 @@ import sys
 from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse
 
-from news_digest_normalize import SITE_EDGE_PUNCTUATION, split_list_items
+from news_digest_normalize import (
+    normalize_host_value,
+    normalize_site_value,
+    split_list_items,
+)
 
 SNIPPET_KEYS = ("snippet", "description", "summary", "content")
 PUBLISHED_AT_KEYS = ("publishedAt", "published_at", "date", "time")
 SOURCE_DOMAIN_KEYS = ("sourceDomain", "domain", "site", "source")
-def normalize_site(site: str) -> str:
-    raw = site.strip().strip(SITE_EDGE_PUNCTUATION)
-    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
-    if candidate.startswith("www."):
-        candidate = candidate[4:]
-    if not candidate:
-        raise ValueError(f"无效站点: {site}")
-    if "." not in candidate:
-        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {site}")
-    return candidate
-
-
-def normalize_host(url: str) -> str:
-    raw = url.strip().strip(SITE_EDGE_PUNCTUATION)
-    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    host = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
-    if host.startswith("www."):
-        host = host[4:]
-    return host
-
 
 def host_matches(host: str, domain: str) -> bool:
     return host == domain or host.endswith(f".{domain}")
@@ -71,7 +54,7 @@ def normalize_url(url: str) -> str:
     scheme = parsed.scheme.lower() or "https"
     if scheme == "http":
         scheme = "https"
-    host = normalize_host(url)
+    host = normalize_host_value(url)
     port = parsed.port
     path = re.sub(r"/+", "/", parsed.path or "/")
     if path != "/" and path.endswith("/"):
@@ -139,13 +122,13 @@ def normalize_result_item(item: dict) -> dict:
     if published_at and not normalized.get("publishedAt"):
         normalized["publishedAt"] = published_at
     if not normalized.get("sourceDomain"):
-        normalized["sourceDomain"] = source_domain or normalize_host(url)
+        normalized["sourceDomain"] = source_domain or normalize_host_value(url)
 
     return normalized
 
 
 def filter_results(results: list[dict], sites: list[str], auto_normalize: bool = False) -> dict[str, object]:
-    domains = list(dict.fromkeys(normalize_site(site) for site in sites))
+    domains = list(dict.fromkeys(normalize_site_value(site) for site in sites))
     seen_urls: set[str] = set()
     seen_titles_by_domain: dict[str, set[str]] = {}
     kept: list[dict] = []
@@ -167,7 +150,7 @@ def filter_results(results: list[dict], sites: list[str], auto_normalize: bool =
             dropped.append({"index": index, "reason": "missing_title", "item": current})
             continue
 
-        host = normalize_host(url)
+        host = normalize_host_value(url)
         if not host:
             dropped.append({"index": index, "reason": "invalid_host", "item": current})
             continue

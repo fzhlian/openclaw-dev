@@ -7,18 +7,17 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from urllib.parse import urlparse
 
 from news_digest_normalize import (
     DEFAULT_LANGUAGE,
-    EDGE_WRAPPER_PUNCTUATION,
     KEYWORD_EDGE_PUNCTUATION,
-    SITE_EDGE_PUNCTUATION,
     SUPPORTED_FREQUENCIES,
     SUPPORTED_LANGUAGE,
     normalize_frequency,
+    normalize_host_value,
     normalize_language,
     normalize_output_mode,
+    normalize_site_value,
     normalize_time_range,
     split_list_items,
 )
@@ -34,6 +33,8 @@ FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 SUPPORTED_OUTPUT_MODES = (FLAT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
+
+
 def split_csv(value: str) -> list[str]:
     return split_list_items([value])
 
@@ -53,38 +54,16 @@ def dedupe_keywords(items: list[str]) -> list[str]:
     return deduped
 
 
-def normalize_site(value: str) -> str:
-    raw = value.strip().strip(SITE_EDGE_PUNCTUATION)
-    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    candidate = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
-    if candidate.startswith("www."):
-        candidate = candidate[4:]
-    if not candidate:
-        raise ValueError(f"无效站点: {value}")
-    if "." not in candidate:
-        raise ValueError(f"站点需使用域名，如 bbc.com；收到: {value}")
-    return candidate
-
-
-def normalize_host(url: str) -> str:
-    raw = url.strip().strip(SITE_EDGE_PUNCTUATION)
-    parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
-    host = (parsed.hostname or "").strip().strip(SITE_EDGE_PUNCTUATION).lower()
-    if host.startswith("www."):
-        host = host[4:]
-    return host
-
-
 def pick_source_label(item: dict) -> str:
     for key in ("matchedDomain", "sourceDomain"):
         value = str(item.get(key, "")).strip()
         if not value:
             continue
         try:
-            return normalize_site(value)
+            return normalize_site_value(value)
         except ValueError:
             continue
-    return normalize_host(str(item.get("url", "")).strip())
+    return normalize_host_value(str(item.get("url", "")).strip())
 
 
 def normalize_topics_display(value: str) -> str:
@@ -94,7 +73,7 @@ def normalize_topics_display(value: str) -> str:
 
 def normalize_sites_display(value: str) -> str:
     items = split_csv(value)
-    normalized = list(dict.fromkeys(normalize_site(item) for item in items))
+    normalized = list(dict.fromkeys(normalize_site_value(item) for item in items))
     return "、".join(normalized)
 
 
