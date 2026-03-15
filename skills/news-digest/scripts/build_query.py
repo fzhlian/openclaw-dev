@@ -6,11 +6,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from pathlib import Path
 
 from news_digest_normalize import (
     dedupe_casefolded_items,
     normalize_site_value,
+    read_text_file,
     split_list_items,
 )
 
@@ -55,13 +55,7 @@ def dedupe_excludes(items: list[str]) -> list[str]:
 
 
 def load_list_file(path: str) -> list[str]:
-    file = Path(path)
-    if not file.exists():
-        raise ValueError(f"文件不存在: {path}")
-    try:
-        content = file.read_text(encoding="utf-8")
-    except OSError as exc:
-        raise ValueError(f"读取文件失败: {path}") from exc
+    content = read_text_file(path)
     items: list[str] = []
     for line in content.splitlines():
         row = line.strip()

@@ -7,10 +7,10 @@ import argparse
 import json
 import re
 import sys
-from pathlib import Path
 from urllib.parse import parse_qsl, urlencode, urlparse
 
 from news_digest_normalize import (
+    load_json_file,
     normalize_host_value,
     normalize_site_value,
     split_list_items,
@@ -86,12 +86,7 @@ def split_items(values: list[str]) -> list[str]:
 
 
 def load_results(path: str) -> list[dict]:
-    try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise ValueError(f"读取输入 JSON 失败: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"解析输入 JSON 失败: {path}") from exc
+    data = load_json_file(path)
     if isinstance(data, list):
         return data
     if isinstance(data, dict) and isinstance(data.get("results"), list):

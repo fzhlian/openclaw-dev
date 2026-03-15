@@ -4,13 +4,12 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
-from pathlib import Path
 
 from news_digest_normalize import (
     DEFAULT_LANGUAGE,
     dedupe_casefolded_items,
+    load_json_file,
     SUPPORTED_FREQUENCIES,
     SUPPORTED_LANGUAGE,
     normalize_frequency,
@@ -67,12 +66,7 @@ def normalize_sites_display(value: str) -> str:
 
 
 def load_payload(path: str) -> dict:
-    try:
-        data = json.loads(Path(path).read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise ValueError(f"读取输入 JSON 失败: {path}") from exc
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"解析输入 JSON 失败: {path}") from exc
+    data = load_json_file(path)
     if isinstance(data, dict) and isinstance(data.get("results"), list):
         return data
     if isinstance(data, list):

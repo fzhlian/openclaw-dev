@@ -4,7 +4,9 @@
 from __future__ import annotations
 
 import re
+import json
 from collections.abc import Mapping
+from pathlib import Path
 from urllib.parse import urlparse
 
 DEFAULT_LANGUAGE = "中文"
@@ -232,3 +234,34 @@ def normalize_site_value(
     if "." not in candidate:
         raise ValueError(f"站点需使用域名，如 bbc.com；收到: {value}")
     return candidate
+
+
+def read_text_file(
+    path: str,
+    *,
+    missing_prefix: str = "文件不存在",
+    read_error_prefix: str = "读取文件失败",
+) -> str:
+    file = Path(path)
+    if not file.exists():
+        raise ValueError(f"{missing_prefix}: {path}")
+    try:
+        return file.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"{read_error_prefix}: {path}") from exc
+
+
+def load_json_file(
+    path: str,
+    *,
+    read_error_prefix: str = "读取输入 JSON 失败",
+    parse_error_prefix: str = "解析输入 JSON 失败",
+):
+    try:
+        content = Path(path).read_text(encoding="utf-8")
+    except OSError as exc:
+        raise ValueError(f"{read_error_prefix}: {path}") from exc
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{parse_error_prefix}: {path}") from exc
