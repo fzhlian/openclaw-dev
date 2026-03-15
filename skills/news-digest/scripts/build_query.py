@@ -8,7 +8,7 @@ import json
 import sys
 
 from news_digest_normalize import (
-    dedupe_casefolded_items,
+    normalize_keyword_items,
     normalize_site_value,
     read_text_file,
     split_list_items,
@@ -46,12 +46,8 @@ def split_items(values: list[str]) -> list[str]:
     return split_list_items(values, dedupe=False)
 
 
-def dedupe_keywords(items: list[str]) -> list[str]:
-    return dedupe_casefolded_items(items)
-
-
 def dedupe_excludes(items: list[str]) -> list[str]:
-    return dedupe_casefolded_items(items)
+    return normalize_keyword_items(items)
 
 
 def load_list_file(path: str) -> list[str]:
@@ -201,7 +197,7 @@ def main() -> int:
         print(str(exc), file=sys.stderr)
         return 1
 
-    keywords = dedupe_keywords([item.strip() for item in keywords if item.strip()])
+    keywords = normalize_keyword_items(keywords)
     sites = list(dict.fromkeys(item.strip() for item in sites if item.strip()))
 
     if not keywords:

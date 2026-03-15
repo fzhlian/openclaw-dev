@@ -14,9 +14,10 @@ from news_digest_normalize import (
     FLAT_OUTPUT_MODE,
     GROUPED_OUTPUT_MODE,
     MAX_LIMIT,
-    dedupe_casefolded_items,
     join_display_items,
     normalize_frequency,
+    normalize_keyword_display,
+    normalize_keyword_items,
     normalize_limit_value,
     normalize_language,
     normalize_site_items,
@@ -48,10 +49,6 @@ def split_csv(values: list[str]) -> list[str]:
     return split_list_items(values)
 
 
-def dedupe_keywords(items: list[str]) -> list[str]:
-    return dedupe_casefolded_items(items)
-
-
 def normalize_site(site: str) -> str:
     return normalize_site_value(site, aliases=SITE_ALIASES)
 
@@ -68,7 +65,7 @@ def ask_list(params: dict[str, Any]) -> list[str]:
 
 
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
-    topics = dedupe_keywords(split_csv(args.topic))
+    topics = normalize_keyword_items(args.topic)
     sites = normalize_site_items(split_csv(args.site), aliases=SITE_ALIASES)
     return {
         "topics": topics,
@@ -92,7 +89,7 @@ def to_confirm_block(params: dict[str, Any]) -> dict[str, str | int]:
     time_range = params["time_range"] or DEFAULT_TIME_RANGE
     output_mode = params["output_mode"] or FLAT_OUTPUT_MODE
     return {
-        "关键词": join_display_items(params["topics"]) if params["topics"] else "（待确认）",
+        "关键词": normalize_keyword_display(params["topics"]) if params["topics"] else "（待确认）",
         "网站": join_display_items(params["sites"]) if params["sites"] else "（待确认）",
         "时间范围": time_range,
         "频率": params["frequency"] or "（待确认）",

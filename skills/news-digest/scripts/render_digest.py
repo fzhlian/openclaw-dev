@@ -13,12 +13,12 @@ from news_digest_normalize import (
     DEFAULT_TIME_RANGE,
     FLAT_OUTPUT_MODE,
     GROUPED_OUTPUT_MODE,
-    dedupe_casefolded_items,
     extract_results_payload,
     join_display_items,
     load_json_file,
     normalize_frequency,
     normalize_host_value,
+    normalize_keyword_display,
     normalize_limit_value,
     normalize_language,
     normalize_output_mode,
@@ -42,10 +42,6 @@ def split_csv(value: str) -> list[str]:
     return split_list_items([value])
 
 
-def dedupe_keywords(items: list[str]) -> list[str]:
-    return dedupe_casefolded_items(items)
-
-
 def pick_source_label(item: dict) -> str:
     for key in ("matchedDomain", "sourceDomain"):
         value = str(item.get(key, "")).strip()
@@ -59,8 +55,7 @@ def pick_source_label(item: dict) -> str:
 
 
 def normalize_topics_display(value: str) -> str:
-    items = dedupe_keywords(split_csv(value))
-    return join_display_items(items)
+    return normalize_keyword_display([value])
 
 
 def normalize_sites_display(value: str) -> str:

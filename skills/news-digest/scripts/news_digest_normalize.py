@@ -214,6 +214,10 @@ def dedupe_casefolded_items(
     return deduped
 
 
+def normalize_keyword_items(values: list[str]) -> list[str]:
+    return dedupe_casefolded_items(split_list_items(values, dedupe=False))
+
+
 def normalize_host_value(value: str) -> str:
     raw = str(value).strip().strip(SITE_EDGE_PUNCTUATION)
     parsed = urlparse(raw if "://" in raw else f"//{raw}", scheme="https")
@@ -250,6 +254,10 @@ def normalize_site_items(
 
 def join_display_items(items: list[str]) -> str:
     return "、".join(items)
+
+
+def normalize_keyword_display(values: list[str]) -> str:
+    return join_display_items(normalize_keyword_items(values))
 
 
 def read_text_file(
