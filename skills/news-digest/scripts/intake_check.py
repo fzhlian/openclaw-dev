@@ -10,10 +10,11 @@ from typing import Any
 from news_digest_normalize import (
     DEFAULT_LIMIT,
     DEFAULT_LANGUAGE,
+    DEFAULT_TIME_RANGE,
+    FLAT_OUTPUT_MODE,
+    GROUPED_OUTPUT_MODE,
     MAX_LIMIT,
     dedupe_casefolded_items,
-    SUPPORTED_FREQUENCIES,
-    SUPPORTED_LANGUAGE,
     normalize_frequency,
     normalize_limit_value,
     normalize_language,
@@ -21,12 +22,11 @@ from news_digest_normalize import (
     normalize_site_value,
     normalize_time_range,
     split_list_items,
+    validate_frequency_value,
+    validate_language_value,
     validate_limit_value,
+    validate_output_mode_value,
 )
-DEFAULT_TIME_RANGE = "最近 7 天"
-DEFAULT_OUTPUT_MODE = "摘要总览 + 逐条清单"
-GROUPED_OUTPUT_MODE = "按主题分组+逐条"
-SUPPORTED_OUTPUT_MODES = (DEFAULT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
 SITE_ALIASES = {
     "bbc": "bbc.com",
     "bbc news": "bbc.com",
@@ -76,7 +76,7 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
         "limit": normalize_limit_value(args.limit),
         "output_mode": normalize_output_mode(
             args.output_mode,
-            flat_output_mode=DEFAULT_OUTPUT_MODE,
+            flat_output_mode=FLAT_OUTPUT_MODE,
             grouped_output_mode=GROUPED_OUTPUT_MODE,
             default_on_blank="",
         ),
@@ -90,7 +90,7 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
 
 def to_confirm_block(params: dict[str, Any]) -> dict[str, str | int]:
     time_range = params["time_range"] or DEFAULT_TIME_RANGE
-    output_mode = params["output_mode"] or DEFAULT_OUTPUT_MODE
+    output_mode = params["output_mode"] or FLAT_OUTPUT_MODE
     return {
         "关键词": "、".join(params["topics"]) if params["topics"] else "（待确认）",
         "网站": "、".join(params["sites"]) if params["sites"] else "（待确认）",
@@ -122,7 +122,7 @@ def render_text(params: dict[str, Any], asks: list[str], confirm: dict[str, str 
     if params["defaults_applied"]["time_range"]:
         defaults.append(f"时间范围默认使用：{DEFAULT_TIME_RANGE}")
     if params["defaults_applied"]["output_mode"]:
-        defaults.append(f"输出模式默认使用：{DEFAULT_OUTPUT_MODE}")
+        defaults.append(f"输出模式默认使用：{FLAT_OUTPUT_MODE}")
 
     if defaults:
         lines.append("")
@@ -147,7 +147,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--output-mode",
         default="",
-        help=f"输出模式，仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}",
+        help=f"输出模式，仅支持 {FLAT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}",
     )
     parser.add_argument("--language", default=DEFAULT_LANGUAGE, help="输出语言，当前仅支持中文")
     parser.add_argument("--format", choices=["text", "json"], default="text", help="输出格式")
@@ -167,20 +167,18 @@ def main() -> int:
     except ValueError as exc:
         raise SystemExit(str(exc))
     normalized_frequency = normalize_frequency(args.frequency)
-    if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
-        raise SystemExit("--frequency 当前仅支持 一次性 / 每日 / 每周")
     normalized_output_mode = normalize_output_mode(
         args.output_mode,
-        flat_output_mode=DEFAULT_OUTPUT_MODE,
+        flat_output_mode=FLAT_OUTPUT_MODE,
         grouped_output_mode=GROUPED_OUTPUT_MODE,
         default_on_blank="",
     )
-    if normalized_output_mode and normalized_output_mode not in SUPPORTED_OUTPUT_MODES:
-        raise SystemExit(
-            f"--output-mode 当前仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}"
-        )
-    if normalize_language(args.language) != SUPPORTED_LANGUAGE:
-        raise SystemExit(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}")
+    try:
+        validate_frequency_value(normalized_frequency)
+        validate_output_mode_value(normalized_output_mode)
+        validate_language_value(normalize_language(args.language))
+    except ValueError as exc:
+        raise SystemExit(str(exc))
 
     params = normalize_params(args)
     asks = ask_list(params)

@@ -10,10 +10,11 @@ from news_digest_normalize import (
     DEFAULT_LIMIT,
     DEFAULT_LANGUAGE,
     MAX_LIMIT,
+    DEFAULT_TIME_RANGE,
+    FLAT_OUTPUT_MODE,
+    GROUPED_OUTPUT_MODE,
     dedupe_casefolded_items,
     load_json_file,
-    SUPPORTED_FREQUENCIES,
-    SUPPORTED_LANGUAGE,
     normalize_frequency,
     normalize_host_value,
     normalize_limit_value,
@@ -22,15 +23,14 @@ from news_digest_normalize import (
     normalize_site_value,
     normalize_time_range,
     split_list_items,
+    validate_frequency_value,
+    validate_language_value,
     validate_limit_value,
+    validate_output_mode_value,
 )
-DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_TIME_LABEL = "时间未标注"
 DEFAULT_LIMITATIONS = "来源受限、时间缺失或覆盖不足时，结论仅基于当前检索结果。"
 DEFAULT_NEXT_STEP = "如需更高覆盖，可放宽时间范围、补充来源或显式开启扩词。"
-GROUPED_OUTPUT_MODE = "按主题分组+逐条"
-FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
-SUPPORTED_OUTPUT_MODES = (FLAT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
 TOPIC_KEYS = ("topic", "queryTopic", "keyword", "query")
 SUMMARY_KEYS = ("snippetZh", "summaryZh", "snippet", "summary")
 
@@ -318,24 +318,19 @@ def main() -> int:
         print("--overview-limit 必须 >= 1", file=sys.stderr)
         return 1
     normalized_frequency = normalize_frequency(args.frequency)
-    if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
-        print("--frequency 当前仅支持 一次性 / 每日 / 每周", file=sys.stderr)
-        return 1
     normalized_output_mode = normalize_output_mode(
         args.output_mode,
         flat_output_mode=FLAT_OUTPUT_MODE,
         grouped_output_mode=GROUPED_OUTPUT_MODE,
         default_on_blank=FLAT_OUTPUT_MODE,
     )
-    if normalized_output_mode not in SUPPORTED_OUTPUT_MODES:
-        print(
-            f"--output-mode 当前仅支持 {FLAT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}",
-            file=sys.stderr,
-        )
-        return 1
     normalized_language = normalize_language(args.language)
-    if normalized_language != SUPPORTED_LANGUAGE:
-        print(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}", file=sys.stderr)
+    try:
+        validate_frequency_value(normalized_frequency)
+        validate_output_mode_value(normalized_output_mode)
+        validate_language_value(normalized_language)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
         return 1
 
     try:

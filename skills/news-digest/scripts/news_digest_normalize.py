@@ -13,6 +13,10 @@ DEFAULT_LANGUAGE = "中文"
 SUPPORTED_LANGUAGE = "中文"
 DEFAULT_LIMIT = 5
 MAX_LIMIT = 20
+DEFAULT_TIME_RANGE = "最近 7 天"
+FLAT_OUTPUT_MODE = "摘要总览 + 逐条清单"
+GROUPED_OUTPUT_MODE = "按主题分组+逐条"
+SUPPORTED_OUTPUT_MODES = (FLAT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
 
 EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
 PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
@@ -287,3 +291,20 @@ def validate_limit_value(
         raise ValueError("--limit 必须 >= 1")
     if value > max_limit:
         raise ValueError(f"--limit 必须 <= {max_limit}")
+
+
+def validate_frequency_value(value: str) -> None:
+    if value and value not in SUPPORTED_FREQUENCIES:
+        raise ValueError("--frequency 当前仅支持 一次性 / 每日 / 每周")
+
+
+def validate_language_value(value: str) -> None:
+    if value != SUPPORTED_LANGUAGE:
+        raise ValueError(f"--language 当前仅支持 {SUPPORTED_LANGUAGE}")
+
+
+def validate_output_mode_value(value: str) -> None:
+    if value and value not in SUPPORTED_OUTPUT_MODES:
+        raise ValueError(
+            f"--output-mode 当前仅支持 {FLAT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}"
+        )
