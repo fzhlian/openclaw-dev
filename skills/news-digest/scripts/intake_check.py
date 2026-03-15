@@ -76,8 +76,6 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
         "limit": normalize_limit_value(args.limit),
         "output_mode": normalize_output_mode(
             args.output_mode,
-            flat_output_mode=FLAT_OUTPUT_MODE,
-            grouped_output_mode=GROUPED_OUTPUT_MODE,
             default_on_blank="",
         ),
         "language": normalize_language(args.language),
@@ -169,8 +167,6 @@ def main() -> int:
     normalized_frequency = normalize_frequency(args.frequency)
     normalized_output_mode = normalize_output_mode(
         args.output_mode,
-        flat_output_mode=FLAT_OUTPUT_MODE,
-        grouped_output_mode=GROUPED_OUTPUT_MODE,
         default_on_blank="",
     )
     try:

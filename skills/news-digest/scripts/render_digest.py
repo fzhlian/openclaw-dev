@@ -182,8 +182,6 @@ def render_parameters(args: argparse.Namespace) -> list[str]:
     frequency = normalize_frequency(args.frequency)
     output_mode = normalize_output_mode(
         args.output_mode,
-        flat_output_mode=FLAT_OUTPUT_MODE,
-        grouped_output_mode=GROUPED_OUTPUT_MODE,
         default_on_blank=FLAT_OUTPUT_MODE,
     )
     time_range = normalize_time_range(args.time_range) or DEFAULT_TIME_RANGE
@@ -256,8 +254,6 @@ def build_markdown(payload: dict, args: argparse.Namespace) -> str:
     force_degraded = bool(payload.get("forceDegraded"))
     output_mode = normalize_output_mode(
         args.output_mode,
-        flat_output_mode=FLAT_OUTPUT_MODE,
-        grouped_output_mode=GROUPED_OUTPUT_MODE,
         default_on_blank=FLAT_OUTPUT_MODE,
     )
     effective_limit = normalize_limit_value(args.limit, default_limit=DEFAULT_LIMIT)
@@ -320,8 +316,6 @@ def main() -> int:
     normalized_frequency = normalize_frequency(args.frequency)
     normalized_output_mode = normalize_output_mode(
         args.output_mode,
-        flat_output_mode=FLAT_OUTPUT_MODE,
-        grouped_output_mode=GROUPED_OUTPUT_MODE,
         default_on_blank=FLAT_OUTPUT_MODE,
     )
     normalized_language = normalize_language(args.language)

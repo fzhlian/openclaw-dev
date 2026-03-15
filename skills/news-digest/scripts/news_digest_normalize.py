@@ -143,8 +143,6 @@ TIME_RANGE_ALIASES = {
 def normalize_output_mode(
     value: str,
     *,
-    flat_output_mode: str,
-    grouped_output_mode: str,
     default_on_blank: str,
 ) -> str:
     text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
@@ -152,9 +150,9 @@ def normalize_output_mode(
         return default_on_blank
     compact = "".join(text.split()).replace("＋", "+")
     if compact in FLAT_OUTPUT_MODE_ALIASES:
-        return flat_output_mode
+        return FLAT_OUTPUT_MODE
     if compact in GROUPED_OUTPUT_MODE_ALIASES:
-        return grouped_output_mode
+        return GROUPED_OUTPUT_MODE
     return text
 
 
