@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from typing import Any
 from urllib.parse import urlparse
 
@@ -52,8 +53,8 @@ def split_csv(values: list[str]) -> list[str]:
             .replace(";", ",")
             .replace("|", ",")
             .replace("／", ",")
-            .replace(" / ", ",")
         )
+        normalized = re.sub(r"\s+/\s*|\s*/\s+", ",", normalized)
         for part in normalized.split(","):
             item = part.strip()
             if item:

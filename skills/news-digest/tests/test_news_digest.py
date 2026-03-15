@@ -142,6 +142,21 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertIn("site:blog.google OpenAI", lines)
         self.assertIn("site:blog.google Gemini", lines)
 
+    def test_build_query_splits_asymmetric_spaced_slashes(self) -> None:
+        result = self.run_script(
+            "build_query.py",
+            "-k",
+            "OpenAI /Gemini",
+            "-s",
+            "openai.com/ blog.google",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lines = result.stdout.strip().splitlines()
+        self.assertIn("site:openai.com OpenAI", lines)
+        self.assertIn("site:openai.com Gemini", lines)
+        self.assertIn("site:blog.google OpenAI", lines)
+        self.assertIn("site:blog.google Gemini", lines)
+
     def test_build_query_strips_trailing_site_punctuation(self) -> None:
         result = self.run_script(
             "build_query.py",
@@ -851,6 +866,21 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(payload["confirm"]["关键词"], "OpenAI、Gemini")
         self.assertEqual(payload["confirm"]["网站"], "openai.com、blog.google")
 
+    def test_intake_check_splits_asymmetric_spaced_slashes(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI /Gemini",
+            "--site",
+            "openai.com/ blog.google",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["关键词"], "OpenAI、Gemini")
+        self.assertEqual(payload["confirm"]["网站"], "openai.com、blog.google")
+
     def test_intake_check_strips_trailing_site_punctuation(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -1198,6 +1228,24 @@ class NewsDigestScriptTests(unittest.TestCase):
             input_path,
             "--site",
             "bbc.com / blog.google",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["summary"]["kept"], 2)
+
+    def test_filter_results_splits_asymmetric_spaced_slashes_in_sites(self) -> None:
+        input_path = self.write_json(
+            [
+                {"title": "BBC One", "url": "https://www.bbc.com/news/a", "snippet": "1"},
+                {"title": "Google One", "url": "https://blog.google/ai/x", "snippet": "2"},
+            ]
+        )
+        result = self.run_script(
+            "filter_results.py",
+            "--input",
+            input_path,
+            "--site",
+            "bbc.com/ blog.google",
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         payload = json.loads(result.stdout)
@@ -2303,6 +2351,34 @@ class NewsDigestScriptTests(unittest.TestCase):
             "OpenAI / Gemini",
             "--sites",
             "openai.com / blog.google",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 关键词：OpenAI、Gemini", result.stdout)
+        self.assertIn("- 网站：openai.com、blog.google", result.stdout)
+
+    def test_render_digest_normalizes_asymmetric_spaced_slash_params(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--keywords",
+            "OpenAI /Gemini",
+            "--sites",
+            "openai.com/ blog.google",
             "--overview-limit",
             "1",
         )
