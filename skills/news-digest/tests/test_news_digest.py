@@ -532,6 +532,22 @@ class NewsDigestScriptTests(unittest.TestCase):
         payload = json.loads(result.stdout)
         self.assertEqual(payload["confirm"]["时间范围"], "最近 7 天")
 
+    def test_intake_check_normalizes_weekday_colloquial_time_range_labels(self) -> None:
+        result = self.run_script(
+            "intake_check.py",
+            "--topic",
+            "OpenAI",
+            "--site",
+            "openai.com",
+            "--time-range",
+            "本礼拜",
+            "--format",
+            "json",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        payload = json.loads(result.stdout)
+        self.assertEqual(payload["confirm"]["时间范围"], "最近 7 天")
+
     def test_intake_check_normalizes_plain_worded_time_range_labels(self) -> None:
         result = self.run_script(
             "intake_check.py",
@@ -2024,6 +2040,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 时间范围：最近 30 天", result.stdout)
+
+    def test_render_digest_normalizes_weekday_colloquial_time_range_labels(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--time-range",
+            "上礼拜",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 时间范围：最近 7 天", result.stdout)
 
     def test_render_digest_normalizes_plain_worded_time_range_labels(self) -> None:
         input_path = self.write_json(
