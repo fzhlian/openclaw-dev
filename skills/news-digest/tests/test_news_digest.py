@@ -2066,6 +2066,31 @@ class NewsDigestScriptTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("- 时间范围：最近 7 天", result.stdout)
 
+    def test_render_digest_normalizes_weekday_colloquial_current_period_labels(self) -> None:
+        input_path = self.write_json(
+            {
+                "results": [
+                    {
+                        "title": "OpenAI policy update",
+                        "url": "https://openai.com/policy",
+                        "snippet": "policy summary from search result",
+                        "matchedDomain": "openai.com",
+                    }
+                ]
+            }
+        )
+        result = self.run_script(
+            "render_digest.py",
+            "--input",
+            input_path,
+            "--time-range",
+            "这礼拜",
+            "--overview-limit",
+            "1",
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("- 时间范围：最近 7 天", result.stdout)
+
     def test_render_digest_normalizes_plain_worded_time_range_labels(self) -> None:
         input_path = self.write_json(
             {
