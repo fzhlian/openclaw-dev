@@ -8,127 +8,23 @@ import json
 from typing import Any
 from urllib.parse import urlparse
 
+from news_digest_normalize import (
+    DEFAULT_LANGUAGE,
+    EDGE_WRAPPER_PUNCTUATION,
+    SUPPORTED_FREQUENCIES,
+    SUPPORTED_LANGUAGE,
+    normalize_frequency,
+    normalize_language,
+    normalize_output_mode,
+    normalize_time_range,
+)
+
 DEFAULT_LIMIT = 5
 MAX_LIMIT = 20
 DEFAULT_TIME_RANGE = "最近 7 天"
 DEFAULT_OUTPUT_MODE = "摘要总览 + 逐条清单"
 GROUPED_OUTPUT_MODE = "按主题分组+逐条"
-DEFAULT_LANGUAGE = "中文"
-SUPPORTED_LANGUAGE = "中文"
 SUPPORTED_OUTPUT_MODES = (DEFAULT_OUTPUT_MODE, GROUPED_OUTPUT_MODE)
-FLAT_OUTPUT_MODE_ALIASES = {"摘要总览+逐条清单", "摘要总览+逐条", "总览+逐条"}
-GROUPED_OUTPUT_MODE_ALIASES = {"按主题分组+逐条", "按主题分组+逐条清单", "分组+逐条"}
-FREQUENCY_ALIASES = {
-    "一次性": "一次性",
-    "一次": "一次性",
-    "执行一次": "一次性",
-    "跑一遍": "一次性",
-    "先发一版": "一次性",
-    "先跑一版": "一次性",
-    "每日": "每日",
-    "每天": "每日",
-    "每天一次": "每日",
-    "一天一次": "每日",
-    "每天1次": "每日",
-    "一天1次": "每日",
-    "日报": "每日",
-    "每周": "每周",
-    "每周一次": "每周",
-    "每星期": "每周",
-    "每星期一次": "每周",
-    "一周一次": "每周",
-    "每周1次": "每周",
-    "每星期1次": "每周",
-    "一周1次": "每周",
-    "周报": "每周",
-}
-SUPPORTED_FREQUENCIES = ("一次性", "每日", "每周")
-TIME_RANGE_ALIASES = {
-    "24h": "最近 24 小时",
-    "1d": "最近 1 天",
-    "7d": "最近 7 天",
-    "14d": "最近 14 天",
-    "30d": "最近 30 天",
-    "24小时": "最近 24 小时",
-    "1天": "最近 1 天",
-    "一天": "最近 1 天",
-    "今天": "最近 1 天",
-    "今日": "最近 1 天",
-    "昨天": "最近 1 天",
-    "昨日": "最近 1 天",
-    "本周": "最近 7 天",
-    "本星期": "最近 7 天",
-    "本礼拜": "最近 7 天",
-    "本月": "最近 30 天",
-    "这周": "最近 7 天",
-    "这星期": "最近 7 天",
-    "这礼拜": "最近 7 天",
-    "这一周": "最近 7 天",
-    "这个月": "最近 30 天",
-    "这月": "最近 30 天",
-    "这一月": "最近 30 天",
-    "上周": "最近 7 天",
-    "上星期": "最近 7 天",
-    "上礼拜": "最近 7 天",
-    "上一周": "最近 7 天",
-    "上一星期": "最近 7 天",
-    "上个月": "最近 30 天",
-    "上月": "最近 30 天",
-    "上一月": "最近 30 天",
-    "上一个月": "最近 30 天",
-    "7天": "最近 7 天",
-    "14天": "最近 14 天",
-    "30天": "最近 30 天",
-    "1月": "最近 30 天",
-    "一月": "最近 30 天",
-    "1周": "最近 7 天",
-    "2周": "最近 14 天",
-    "1个月": "最近 30 天",
-    "一周": "最近 7 天",
-    "两周": "最近 14 天",
-    "一个月": "最近 30 天",
-    "最近24小时": "最近 24 小时",
-    "最近1天": "最近 1 天",
-    "最近7天": "最近 7 天",
-    "最近14天": "最近 14 天",
-    "最近30天": "最近 30 天",
-    "最近1月": "最近 30 天",
-    "最近一月": "最近 30 天",
-    "最近1周": "最近 7 天",
-    "最近2周": "最近 14 天",
-    "最近1个月": "最近 30 天",
-    "近24小时": "最近 24 小时",
-    "近1天": "最近 1 天",
-    "近7天": "最近 7 天",
-    "近14天": "最近 14 天",
-    "近30天": "最近 30 天",
-    "近1月": "最近 30 天",
-    "近一月": "最近 30 天",
-    "近1周": "最近 7 天",
-    "近2周": "最近 14 天",
-    "近1个月": "最近 30 天",
-    "近一周": "最近 7 天",
-    "近两周": "最近 14 天",
-    "近一个月": "最近 30 天",
-    "过去24小时": "最近 24 小时",
-    "过去1天": "最近 1 天",
-    "过去7天": "最近 7 天",
-    "过去14天": "最近 14 天",
-    "过去30天": "最近 30 天",
-    "过去1月": "最近 30 天",
-    "过去一月": "最近 30 天",
-    "过去1周": "最近 7 天",
-    "过去2周": "最近 14 天",
-    "过去1个月": "最近 30 天",
-    "最近一天": "最近 1 天",
-    "过去一天": "最近 1 天",
-    "最近一周": "最近 7 天",
-    "过去一周": "最近 7 天",
-    "最近两周": "最近 14 天",
-    "过去两周": "最近 14 天",
-    "最近一个月": "最近 30 天",
-    "过去一个月": "最近 30 天",
-}
 SITE_ALIASES = {
     "bbc": "bbc.com",
     "bbc news": "bbc.com",
@@ -142,10 +38,8 @@ SITE_ALIASES = {
     "华尔街见闻": "wallstreetcn.com",
     "華爾街見聞": "wallstreetcn.com",
 }
-EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
 KEYWORD_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
 SITE_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
-PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
 
 
 def split_csv(values: list[str]) -> list[str]:
@@ -208,39 +102,6 @@ def ask_list(params: dict[str, Any]) -> list[str]:
         asks.append("这是一次性检索，还是要做日报/周报模板？")
     return asks
 
-
-def normalize_frequency(value: str) -> str:
-    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
-    if not text:
-        return ""
-    compact = "".join(text.split())
-    return FREQUENCY_ALIASES.get(compact, FREQUENCY_ALIASES.get(text, text))
-
-
-def normalize_output_mode(value: str) -> str:
-    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
-    if not text:
-        return ""
-    compact = "".join(text.split()).replace("＋", "+")
-    if compact in FLAT_OUTPUT_MODE_ALIASES:
-        return DEFAULT_OUTPUT_MODE
-    if compact in GROUPED_OUTPUT_MODE_ALIASES:
-        return GROUPED_OUTPUT_MODE
-    return text
-
-
-def normalize_time_range(value: str) -> str:
-    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
-    if not text:
-        return ""
-    compact = "".join(text.split()).lower()
-    return TIME_RANGE_ALIASES.get(compact, text)
-
-
-def normalize_language(value: str) -> str:
-    return value.strip().strip(PARAM_EDGE_PUNCTUATION) or DEFAULT_LANGUAGE
-
-
 def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
     topics = dedupe_keywords(split_csv(args.topic))
     sites = list(dict.fromkeys(normalize_site(site) for site in split_csv(args.site)))
@@ -250,7 +111,12 @@ def normalize_params(args: argparse.Namespace) -> dict[str, Any]:
         "time_range": normalize_time_range(args.time_range),
         "frequency": normalize_frequency(args.frequency),
         "limit": args.limit,
-        "output_mode": normalize_output_mode(args.output_mode),
+        "output_mode": normalize_output_mode(
+            args.output_mode,
+            flat_output_mode=DEFAULT_OUTPUT_MODE,
+            grouped_output_mode=GROUPED_OUTPUT_MODE,
+            default_on_blank="",
+        ),
         "language": normalize_language(args.language),
         "defaults_applied": {
             "time_range": not bool(args.time_range.strip()),
@@ -340,7 +206,12 @@ def main() -> int:
     normalized_frequency = normalize_frequency(args.frequency)
     if normalized_frequency and normalized_frequency not in SUPPORTED_FREQUENCIES:
         raise SystemExit("--frequency 当前仅支持 一次性 / 每日 / 每周")
-    normalized_output_mode = normalize_output_mode(args.output_mode)
+    normalized_output_mode = normalize_output_mode(
+        args.output_mode,
+        flat_output_mode=DEFAULT_OUTPUT_MODE,
+        grouped_output_mode=GROUPED_OUTPUT_MODE,
+        default_on_blank="",
+    )
     if normalized_output_mode and normalized_output_mode not in SUPPORTED_OUTPUT_MODES:
         raise SystemExit(
             f"--output-mode 当前仅支持 {DEFAULT_OUTPUT_MODE} / {GROUPED_OUTPUT_MODE}"

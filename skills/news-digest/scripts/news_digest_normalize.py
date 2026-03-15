@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Shared normalization helpers for news-digest scripts."""
+
+from __future__ import annotations
+
+DEFAULT_LANGUAGE = "中文"
+SUPPORTED_LANGUAGE = "中文"
+
+EDGE_WRAPPER_PUNCTUATION = "\"'“”‘’()（）[]【】<>《》"
+PARAM_EDGE_PUNCTUATION = ".,，。;；:：!！?？" + EDGE_WRAPPER_PUNCTUATION
+
+FLAT_OUTPUT_MODE_ALIASES = {"摘要总览+逐条清单", "摘要总览+逐条", "总览+逐条"}
+GROUPED_OUTPUT_MODE_ALIASES = {"按主题分组+逐条", "按主题分组+逐条清单", "分组+逐条"}
+
+FREQUENCY_ALIASES = {
+    "一次性": "一次性",
+    "一次": "一次性",
+    "执行一次": "一次性",
+    "跑一遍": "一次性",
+    "先发一版": "一次性",
+    "先跑一版": "一次性",
+    "每日": "每日",
+    "每天": "每日",
+    "每天一次": "每日",
+    "一天一次": "每日",
+    "每天1次": "每日",
+    "一天1次": "每日",
+    "日报": "每日",
+    "每周": "每周",
+    "每周一次": "每周",
+    "每星期": "每周",
+    "每星期一次": "每周",
+    "一周一次": "每周",
+    "每周1次": "每周",
+    "每星期1次": "每周",
+    "一周1次": "每周",
+    "周报": "每周",
+}
+SUPPORTED_FREQUENCIES = ("一次性", "每日", "每周")
+
+TIME_RANGE_ALIASES = {
+    "24h": "最近 24 小时",
+    "1d": "最近 1 天",
+    "7d": "最近 7 天",
+    "14d": "最近 14 天",
+    "30d": "最近 30 天",
+    "24小时": "最近 24 小时",
+    "1天": "最近 1 天",
+    "一天": "最近 1 天",
+    "今天": "最近 1 天",
+    "今日": "最近 1 天",
+    "昨天": "最近 1 天",
+    "昨日": "最近 1 天",
+    "本周": "最近 7 天",
+    "本星期": "最近 7 天",
+    "本礼拜": "最近 7 天",
+    "本月": "最近 30 天",
+    "这周": "最近 7 天",
+    "这星期": "最近 7 天",
+    "这礼拜": "最近 7 天",
+    "这一周": "最近 7 天",
+    "这个月": "最近 30 天",
+    "这月": "最近 30 天",
+    "这一月": "最近 30 天",
+    "上周": "最近 7 天",
+    "上星期": "最近 7 天",
+    "上礼拜": "最近 7 天",
+    "上一周": "最近 7 天",
+    "上一星期": "最近 7 天",
+    "上个月": "最近 30 天",
+    "上月": "最近 30 天",
+    "上一月": "最近 30 天",
+    "上一个月": "最近 30 天",
+    "7天": "最近 7 天",
+    "14天": "最近 14 天",
+    "30天": "最近 30 天",
+    "1月": "最近 30 天",
+    "一月": "最近 30 天",
+    "1周": "最近 7 天",
+    "2周": "最近 14 天",
+    "1个月": "最近 30 天",
+    "一周": "最近 7 天",
+    "两周": "最近 14 天",
+    "一个月": "最近 30 天",
+    "最近24小时": "最近 24 小时",
+    "最近1天": "最近 1 天",
+    "最近7天": "最近 7 天",
+    "最近14天": "最近 14 天",
+    "最近30天": "最近 30 天",
+    "最近1月": "最近 30 天",
+    "最近一月": "最近 30 天",
+    "最近1周": "最近 7 天",
+    "最近2周": "最近 14 天",
+    "最近1个月": "最近 30 天",
+    "近24小时": "最近 24 小时",
+    "近1天": "最近 1 天",
+    "近7天": "最近 7 天",
+    "近14天": "最近 14 天",
+    "近30天": "最近 30 天",
+    "近1月": "最近 30 天",
+    "近一月": "最近 30 天",
+    "近1周": "最近 7 天",
+    "近2周": "最近 14 天",
+    "近1个月": "最近 30 天",
+    "近一周": "最近 7 天",
+    "近两周": "最近 14 天",
+    "近一个月": "最近 30 天",
+    "过去24小时": "最近 24 小时",
+    "过去1天": "最近 1 天",
+    "过去7天": "最近 7 天",
+    "过去14天": "最近 14 天",
+    "过去30天": "最近 30 天",
+    "过去1月": "最近 30 天",
+    "过去一月": "最近 30 天",
+    "过去1周": "最近 7 天",
+    "过去2周": "最近 14 天",
+    "过去1个月": "最近 30 天",
+    "最近一天": "最近 1 天",
+    "过去一天": "最近 1 天",
+    "最近一周": "最近 7 天",
+    "过去一周": "最近 7 天",
+    "最近两周": "最近 14 天",
+    "过去两周": "最近 14 天",
+    "最近一个月": "最近 30 天",
+    "过去一个月": "最近 30 天",
+}
+
+
+def normalize_output_mode(
+    value: str,
+    *,
+    flat_output_mode: str,
+    grouped_output_mode: str,
+    default_on_blank: str,
+) -> str:
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
+    if not text:
+        return default_on_blank
+    compact = "".join(text.split()).replace("＋", "+")
+    if compact in FLAT_OUTPUT_MODE_ALIASES:
+        return flat_output_mode
+    if compact in GROUPED_OUTPUT_MODE_ALIASES:
+        return grouped_output_mode
+    return text
+
+
+def normalize_time_range(value: str) -> str:
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
+    if not text:
+        return ""
+    compact = "".join(text.split()).lower()
+    return TIME_RANGE_ALIASES.get(compact, text)
+
+
+def normalize_frequency(value: str) -> str:
+    text = value.strip().strip(PARAM_EDGE_PUNCTUATION)
+    if not text:
+        return ""
+    compact = "".join(text.split())
+    return FREQUENCY_ALIASES.get(compact, FREQUENCY_ALIASES.get(text, text))
+
+
+def normalize_language(value: str, *, default_language: str = DEFAULT_LANGUAGE) -> str:
+    return value.strip().strip(PARAM_EDGE_PUNCTUATION) or default_language
