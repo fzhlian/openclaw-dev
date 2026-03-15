@@ -14,12 +14,12 @@ from news_digest_normalize import (
     FLAT_OUTPUT_MODE,
     GROUPED_OUTPUT_MODE,
     MAX_LIMIT,
-    join_display_items,
     normalize_frequency,
     normalize_keyword_display,
     normalize_keyword_items,
     normalize_limit_value,
     normalize_language,
+    normalize_site_display,
     normalize_site_items,
     normalize_output_mode,
     normalize_site_value,
@@ -90,7 +90,7 @@ def to_confirm_block(params: dict[str, Any]) -> dict[str, str | int]:
     output_mode = params["output_mode"] or FLAT_OUTPUT_MODE
     return {
         "关键词": normalize_keyword_display(params["topics"]) if params["topics"] else "（待确认）",
-        "网站": join_display_items(params["sites"]) if params["sites"] else "（待确认）",
+        "网站": normalize_site_display(params["sites"]) if params["sites"] else "（待确认）",
         "时间范围": time_range,
         "频率": params["frequency"] or "（待确认）",
         "结果数": params["limit"],

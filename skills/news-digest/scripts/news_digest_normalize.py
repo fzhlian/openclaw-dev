@@ -260,6 +260,14 @@ def normalize_keyword_display(values: list[str]) -> str:
     return join_display_items(normalize_keyword_items(values))
 
 
+def normalize_site_display(
+    values: list[str],
+    *,
+    aliases: Mapping[str, str] | None = None,
+) -> str:
+    return join_display_items(normalize_site_items(values, aliases=aliases))
+
+
 def read_text_file(
     path: str,
     *,

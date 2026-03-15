@@ -14,7 +14,6 @@ from news_digest_normalize import (
     FLAT_OUTPUT_MODE,
     GROUPED_OUTPUT_MODE,
     extract_results_payload,
-    join_display_items,
     load_json_file,
     normalize_frequency,
     normalize_host_value,
@@ -22,7 +21,7 @@ from news_digest_normalize import (
     normalize_limit_value,
     normalize_language,
     normalize_output_mode,
-    normalize_site_items,
+    normalize_site_display,
     normalize_site_value,
     normalize_time_range,
     split_list_items,
@@ -59,8 +58,7 @@ def normalize_topics_display(value: str) -> str:
 
 
 def normalize_sites_display(value: str) -> str:
-    items = split_csv(value)
-    return join_display_items(normalize_site_items(items))
+    return normalize_site_display(split_csv(value))
 
 
 def load_payload(path: str) -> dict:
