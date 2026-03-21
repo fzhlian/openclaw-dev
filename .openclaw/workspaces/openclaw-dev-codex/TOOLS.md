@@ -27,6 +27,8 @@
 - 若目标是升级/发布 `codex-dev` 到 OpenClaw / ClawHub，第一条预检查命令应为 `/home/fzhlian/bin/codex-dev-publish-inspect`；不要同时抛多个审批卡
 - 这类发布预检查不要探测本仓库没有的 `package.json` / `skill/package.json`
 - 若目标是切换到“新闻项目 / news 方向”，优先基于 `/home/fzhlian/bin/codex-dev-assets-inspect` 做模糊匹配；不要自己拼 `find ... | rg ...`
+- 项目切换的模糊匹配不只看字面，也看常见中英语义别名和 slug 对应；例如 `文章收集` 可对应 `article-digest`，`新闻` 可对应 `news-digest`
+- 但语义匹配也必须基于真实资产；若 `article-digest` / `news-digest` 等多个候选都接近，就让用户选或确认，不要擅自切换
 - 若目标已明确是 `news-digest`，第一条且唯一预检查应为 `/home/fzhlian/bin/codex-dev-skill-inspect skills/news-digest`
 - 若目标是 repo 级 code review，而工作区又是干净的，则继续读取最近提交或目标模块；不要把 `git status` 当成 review 终点
 - 若继续 review 需要第二轮只读命令，就直接发起真实命令，不要只输出占位式审批提示

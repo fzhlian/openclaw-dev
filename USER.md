@@ -17,5 +17,7 @@
 - Casual-chat preference: if I am only greeting you or chatting briefly, do not treat that as resuming the last task
 - Context-switch preference: in this repo, “切换到 codex 开发” means switching to the `openclaw-dev-codex` development context, not clearing the current workbench
 - Switching preference: project/skill/agent switching should use fuzzy matching over real existing assets; if ambiguous, ask me to choose; if no match, do not pretend the switch succeeded
+- Semantic-switch preference: fuzzy matching should also understand common natural-language aliases and slugs, for example `文章收集` <-> `article-digest`, but only if that candidate really exists in the visible asset set
+- Confirmation preference: if a semantic description could map to multiple close skills (for example `article-digest` and `news-digest`), ask me to choose or confirm instead of silently picking one
 - News preference: if I say “切换到新闻项目 / news 方向” and the only real match is `news-digest`, switch directly to `news-digest`; if I explicitly say `继续开发 news-digest`, start from the single `codex-dev-skill-inspect skills/news-digest` precheck
 - Publish preference: for `codex-dev` release/publish requests, use a single correct precheck first, avoid multiple parallel approval cards, and do not blindly bump versions after `Version already exists`

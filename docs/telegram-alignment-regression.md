@@ -186,6 +186,19 @@
 - 若唯一命中 `news-digest`，则直接切到 `news-digest`
 - 不停在“先切到 news 方向”这种半切换状态
 
+再测语义切换：
+
+```text
+切换到文章收集 skill
+```
+
+通过标准：
+
+- 先基于真实存在的 skill / agent / workspace 候选做字面 + 语义匹配
+- 如果当前候选里只有 `article-digest` 语义唯一命中，则明确切到 `article-digest`
+- 如果同时存在 `article-digest`、`news-digest` 等多个 digest 类候选，必须让用户选择或确认
+- 如果当前资产里并没有 `article-digest`，就不能假装切换成功；只能明确说未找到该目标，或请用户确认是否指其他已存在 skill
+
 ### 4. Skill 预检查
 
 测试语句：

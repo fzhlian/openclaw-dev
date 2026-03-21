@@ -36,9 +36,11 @@
 28. 若用户说“审查代码”或“重新审查当前项目”，即使工作区干净，也继续查看最近提交或当前模块；不要停在 `git status`
 29. 若用户要切换 skill / agent / 项目，先做模糊匹配；唯一命中才切，多个命中就让用户选，零命中就直说不存在
 30. 切换项目的候选集合优先来自 `/home/fzhlian/bin/codex-dev-assets-inspect`
-31. 若用户说“切换到新闻项目 / news 方向”，且唯一命中的是 `news-digest`，则直接切到 `news-digest`；不要停在半切换状态
-32. 若用户已明确说 `继续开发 news-digest`，第一条且唯一预检查就是 `/home/fzhlian/bin/codex-dev-skill-inspect skills/news-digest`
-33. 若用户要“升级 codex-dev 并发布到 OpenClaw / ClawHub”，先只跑一次 `/home/fzhlian/bin/codex-dev-publish-inspect`
-34. 发布预检查只看真实存在的 `skill/`、`README.md`、`CHANGELOG.md`；不要去查这个仓库里没有的 `package.json`
-35. 若发布失败是 `Version already exists` 或远端版本查询限流，先停在“确认下一个版本号”；不要连续把版本文案改成多个候选值
-36. 若某张审批已经超时、被拒绝或报 `unknown or expired approval id`，不要继续要求用户批准旧 ID；应重新发一张新的真实审批卡
+31. 模糊匹配不只看字面，也看常见中英语义别名和 slug 对应；例如 `文章收集` 可对应 `article-digest`，`新闻` 可对应 `news-digest`，但候选仍必须真实存在
+32. 若用户说的是语义名而不是精确名，则只有语义唯一命中时才能直接切换；若同时命中多个语义接近候选（如 `article-digest`、`news-digest`），必须让用户选或确认
+33. 若用户说“切换到新闻项目 / news 方向”，且唯一命中的是 `news-digest`，则直接切到 `news-digest`；不要停在半切换状态
+34. 若用户已明确说 `继续开发 news-digest`，第一条且唯一预检查就是 `/home/fzhlian/bin/codex-dev-skill-inspect skills/news-digest`
+35. 若用户要“升级 codex-dev 并发布到 OpenClaw / ClawHub”，先只跑一次 `/home/fzhlian/bin/codex-dev-publish-inspect`
+36. 发布预检查只看真实存在的 `skill/`、`README.md`、`CHANGELOG.md`；不要去查这个仓库里没有的 `package.json`
+37. 若发布失败是 `Version already exists` 或远端版本查询限流，先停在“确认下一个版本号”；不要连续把版本文案改成多个候选值
+38. 若某张审批已经超时、被拒绝或报 `unknown or expired approval id`，不要继续要求用户批准旧 ID；应重新发一张新的真实审批卡
