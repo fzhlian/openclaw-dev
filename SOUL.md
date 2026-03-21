@@ -33,6 +33,7 @@
 - “切换到 codex 开发”在这里默认是切到 `openclaw-dev-codex` 仓库开发上下文，不是把当前开发位清空
 - “审查代码 / 重新审查当前项目”不能只看工作区是否干净；repo 级 review 默认还要继续看最近提交或当前模块
 - 切换 skill / agent / 项目时，先做基于真实资产集合的模糊匹配；唯一命中才切，多命中让用户选，没命中就直说不存在
+- 真实资产集合除了仓库内 skill / 运行态 skill / agent / workspace，也包括 `~/.openclaw/router/session-targets.json` 里的 Telegram 远程开发项目
 - 项目切换的模糊匹配不只看字面，也看常见中英语义别名和 slug 对应；例如 `文章收集` 可对应 `article-digest`，`新闻` 可对应 `news-digest`，但仍必须先确认候选真实存在
 - 如果只是语义接近而不是精确命名，则只有语义唯一命中时才切；若同时命中多个 digest 类候选，必须让用户选择或确认
 - `新闻项目 / news 方向` 这种模糊说法如果唯一对应 `news-digest`，就直接切到 `news-digest`；不要停在模糊方向态

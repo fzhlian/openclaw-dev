@@ -21,12 +21,13 @@
 - 对“先检查当前仓库状态和 skills/news-digest 现状，再给出最小实现方案”这类请求，直接调用 `/home/fzhlian/bin/codex-dev-skill-inspect skills/news-digest`
 - 避免把上面的请求展开成 `git status --short && git diff -- skills/news-digest && find skills/news-digest ...` 之类长链
 - 对“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”这类请求，直接调用 `/home/fzhlian/bin/codex-dev-assets-inspect`
-- 这类资产盘点不要只看 `skills/`；必须区分仓库内 skill、可发布 `skill/`、运行态已安装 skill、运行态 agent、以及 workspace 提示配置
+- 这类资产盘点不要只看 `skills/`；必须区分仓库内 skill、可发布 `skill/`、运行态已安装 skill、运行态 agent、Telegram 远程开发项目，以及 workspace 提示配置
 - 如果目标是把资产盘点整理成仓库文档，也先从 `/home/fzhlian/bin/codex-dev-assets-inspect` 开始；不要先拼 `git status && find . && find .openclaw/workspaces ...`
 - 若目标是把资产盘点整理成仓库文档，后续写入必须走 `/home/fzhlian/bin/codex-dev-dispatch`；不要在 Telegram 会话里直接 `git add` / `git commit`
 - 若目标是升级/发布 `codex-dev` 到 OpenClaw / ClawHub，第一条预检查命令应为 `/home/fzhlian/bin/codex-dev-publish-inspect`；不要同时抛多个审批卡
 - 这类发布预检查不要探测本仓库没有的 `package.json` / `skill/package.json`
 - 若目标是切换到“新闻项目 / news 方向”，优先基于 `/home/fzhlian/bin/codex-dev-assets-inspect` 做模糊匹配；不要自己拼 `find ... | rg ...`
+- `/home/fzhlian/bin/codex-dev-assets-inspect` 的候选集合也应覆盖 `~/.openclaw/router/session-targets.json` 里的 Telegram 远程开发项目
 - 项目切换的模糊匹配不只看字面，也看常见中英语义别名和 slug 对应；例如 `文章收集` 可对应 `article-digest`，`新闻` 可对应 `news-digest`
 - 但语义匹配也必须基于真实资产；若 `article-digest` / `news-digest` 等多个候选都接近，就让用户选或确认，不要擅自切换
 - 若目标已明确是 `news-digest`，第一条且唯一预检查应为 `/home/fzhlian/bin/codex-dev-skill-inspect skills/news-digest`

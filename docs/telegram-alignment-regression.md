@@ -33,6 +33,8 @@
 通过标准：
 
 - 明确区分 `skills/`、`skill/`、`~/.openclaw/skills`、runtime agent、workspace 配置
+- 明确区分 Telegram 远程开发项目（如 router `session-targets.json` 中的 `article-digest`）
+- 能说出 `article-digest`
 - 能说出 `news-digest`
 - 能说出 `codex-dev`
 - 能说出 `openclaw-dev-codex`

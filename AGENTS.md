@@ -16,7 +16,7 @@
 - 需要把 wrapper workspace 的 bootstrap / identity / user / tools 等提示文件纳入版本控制时，优先维护仓库内 `.openclaw/workspaces/<workspace-name>/` 的源码，再同步到 `~/.openclaw/workspace-*` 运行态副本
 - 任何会写文件的请求，都必须明确目标目录；默认工作目录是 `/home/fzhlian/Code/codex-dev`
 - 回答“你自己开发了哪些 skill / agent / workspace”时，不要只看一个目录；至少区分仓库内 `skills/`、可发布 `skill/`、运行态 `~/.openclaw/skills`、运行态 `~/.openclaw/openclaw.json` agent 列表、以及 `.openclaw/workspaces/` / `~/.openclaw/workspace-*`
-- 盘点用户自研资产时，要明确区分“仓库内 skill”“可发布 skill”“运行态已安装 skill”“运行态 agent”“workspace 提示配置”，不要把它们混成一个数字
+- 盘点用户自研资产时，要明确区分“仓库内 skill”“可发布 skill”“运行态已安装 skill”“运行态 agent”“Telegram 远程开发项目”“workspace 提示配置”，不要把它们混成一个数字
 
 ## 开发行为
 
@@ -78,7 +78,7 @@
 - 但不要把普通寒暄、表情、称呼讨论误判成“继续开发”或“继续上一个任务”；只有出现明确任务动词或明确目标时，才恢复任务执行链
 - 在本仓库语境里，“切换到 codex 开发 / Codex 开发模式”默认指切换到 `openclaw-dev-codex` 这个仓库开发上下文，而不是清空当前开发位
 - 若用户先说“结束当前开发，切换到 codex 开发”，随后又问“现在开发的是什么”，应回答“当前上下文已切到 `openclaw-dev-codex`，但具体子任务尚未指定”，而不是直接说“当前没有开发项在跑”
-- 若用户要求“切换项目 / 切换 skill / 切换 agent”，先在已知资产集合里做模糊匹配：仓库内 skill、可发布 skill、运行态已安装 skill、运行态 agent、workspace 配置都可作为候选
+- 若用户要求“切换项目 / 切换 skill / 切换 agent”，先在已知资产集合里做模糊匹配：仓库内 skill、可发布 skill、运行态已安装 skill、运行态 agent、Telegram 远程开发项目、workspace 配置都可作为候选
 - 若模糊匹配唯一命中，则切换到该目标；若命中多个候选，必须把候选列给用户选；若没有命中，必须明确说当前不存在这个项目/skill/agent，不能假定切换成功
 - 模糊匹配不只看字面，也要看常见中英语义别名、slug 对应和自然语言描述；例如 `文章收集` 可对应 `article-digest`，`新闻` 可对应 `news-digest`，但前提仍是候选必须真实存在于当前资产集合
 - 若用户说的是语义名而不是精确名，则只有语义唯一命中时才能直接切换；若同时命中多个语义接近候选（如 `article-digest`、`news-digest`），必须让用户选择或确认
@@ -109,7 +109,7 @@
 - 字面范例：如果用户说“继续完善今天的 news-digest 技能；先检查当前仓库状态和 skills/news-digest 现状，再给出最小实现方案”，默认第一条也是唯一预检查命令应为 `codex-dev-skill-inspect skills/news-digest`
 - 对上述范例，不要改写成 `git status && git diff && find ...` 或 `pwd && ...` 这类多段只读命令链
 - 如果用户问“当前 OpenClaw 有哪些你自己开发的 skill / agent / workspace”，默认先使用 `codex-dev-assets-inspect`，不要自己拼 `find skills ... && find ~/.openclaw/agents ...`
-- 对这类资产盘点问题，不要只查 `skills/`；必须同时覆盖 `skill/`、`~/.openclaw/skills`、`~/.openclaw/openclaw.json` 的 agent 列表，以及仓库 / 运行态 workspace 配置
+- 对这类资产盘点问题，不要只查 `skills/`；必须同时覆盖 `skill/`、`~/.openclaw/skills`、`~/.openclaw/openclaw.json` 的 agent 列表、`~/.openclaw/router/session-targets.json` 里的 Telegram 远程开发项目，以及仓库 / 运行态 workspace 配置
 - 若项目切换需要确认候选集合，也优先从 `codex-dev-assets-inspect` 的结果里取 skill / agent / workspace 名称；不要凭记忆猜可切换目标
 - 对项目切换，不要自己拼 `find skills skill ... | rg ...` 这类检索命令来猜候选；优先使用 `codex-dev-assets-inspect`
 - 如果用户要把资产盘点结果整理成仓库内文档，预检查也应先从 `codex-dev-assets-inspect` 开始；只有在需要确认落盘位置时，才补最小目录/文件存在性检查

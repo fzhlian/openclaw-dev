@@ -17,6 +17,7 @@ fi
 
 REPO_DIR="$(git -C "$REPO_DIR" rev-parse --show-toplevel)"
 OPENCLAW_JSON="$OPENCLAW_HOME/openclaw.json"
+ROUTER_TARGETS_JSON="$OPENCLAW_HOME/router/session-targets.json"
 
 printf '## repo_skills\n'
 find "$REPO_DIR/skills" -maxdepth 2 -name SKILL.md 2>/dev/null | LC_ALL=C sort | sed "s|^$REPO_DIR/||" || true
@@ -53,6 +54,36 @@ for agent in data.get("agents", {}).get("list", []):
     agent_dir = agent.get("agentDir", "")
     model = agent.get("model", "")
     print(f"{agent_id}\tworkspace={workspace}\tagentDir={agent_dir}\tmodel={model}")
+PY
+fi
+
+printf '\n## telegram_remote_projects\n'
+if [ -f "$ROUTER_TARGETS_JSON" ]; then
+  python3 - "$ROUTER_TARGETS_JSON" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+seen = set()
+for item in data:
+    project_id = item.get("id", "")
+    if not project_id:
+        continue
+    key = (
+        project_id,
+        item.get("kind", ""),
+        item.get("source", ""),
+        item.get("path", ""),
+    )
+    if key in seen:
+        continue
+    seen.add(key)
+    kind = item.get("kind", "")
+    source = item.get("source", "")
+    project_path = item.get("path", "")
+    print(f"{project_id}\tkind={kind}\tsource={source}\tpath={project_path}")
 PY
 fi
 
