@@ -1,0 +1,923 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  openclaw-office-shell quick
+  openclaw-office-shell doctor
+  openclaw-office-shell doctor-json
+  openclaw-office-shell status
+  openclaw-office-shell describe
+  openclaw-office-shell caps
+  openclaw-office-shell path
+  openclaw-office-shell approvals
+  openclaw-office-shell approvals-json
+  openclaw-office-shell policy <argv0> [arg...]
+  openclaw-office-shell policy-json <argv0> [arg...]
+  openclaw-office-shell policy-matrix [basic|dev]
+  openclaw-office-shell policy-matrix-json [basic|dev]
+  openclaw-office-shell toolchain [<bin>...]
+  openclaw-office-shell toolchain-json [<bin>...]
+  openclaw-office-shell which <bin> [<bin>...]
+  openclaw-office-shell prepare <argv0> [arg...]
+  openclaw-office-shell run <argv0> [arg...]
+  openclaw-office-shell exec <argv0> [arg...]
+  openclaw-office-shell hostname
+  openclaw-office-shell git-version
+  openclaw-office-shell uname
+  openclaw-office-shell read <absolute-path>
+  openclaw-office-shell proof
+  openclaw-office-shell proof-hostname
+
+Notes:
+  - Uses a minimal local CLI config to avoid the flaky default nodes CLI path.
+  - Talks to the local Gateway over ws://127.0.0.1:18789 on the brain host.
+  - Targets node "office-shell" and agent "openclaw-dev-codex" by default.
+  - Uses OPENCLAW_OFFICE_SHELL_TIMEOUT_SECONDS (default: 12) to avoid hanging forever.
+  - Uses OPENCLAW_OFFICE_SHELL_RETRIES (default: 3) for transient local loopback failures.
+  - `run` returns JSON; `exec` prints stdout/stderr and exits with the remote exit code.
+EOF
+}
+
+STATE_DIR="${OPENCLAW_STATE_DIR:-$HOME/.openclaw}"
+STATE_ENV="$STATE_DIR/.env"
+CONFIG_PATH_DEFAULT="$STATE_DIR/openclaw-cli-min.json"
+GATEWAY_URL_DEFAULT="ws://127.0.0.1:18789"
+NODE_NAME="${OPENCLAW_OFFICE_SHELL_NODE:-office-shell}"
+AGENT_ID="${OPENCLAW_OFFICE_SHELL_AGENT:-openclaw-dev-codex}"
+CLI_TIMEOUT_SECONDS="${OPENCLAW_OFFICE_SHELL_TIMEOUT_SECONDS:-12}"
+CLI_RETRIES="${OPENCLAW_OFFICE_SHELL_RETRIES:-3}"
+CLI_RETRY_DELAY_SECONDS="${OPENCLAW_OFFICE_SHELL_RETRY_DELAY_SECONDS:-1}"
+TOOLCHAIN_DEFAULT_BINS=(git python3 node npm pnpm bun)
+EXEC_APPROVALS_PATH="/home/fzhlian/.openclaw/exec-approvals.json"
+
+if [[ -f "$STATE_ENV" ]]; then
+  # shellcheck disable=SC1090
+  source "$STATE_ENV"
+fi
+
+export OPENCLAW_CONFIG_PATH="${OPENCLAW_CONFIG_PATH:-$CONFIG_PATH_DEFAULT}"
+export OPENCLAW_GATEWAY_URL="${OPENCLAW_GATEWAY_URL:-$GATEWAY_URL_DEFAULT}"
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "jq is required" >&2
+  exit 1
+fi
+
+openclaw_cli() {
+  local attempt stdout_file stderr_file status stdout_text stderr_text combined_text
+  stdout_file="$(mktemp)"
+  stderr_file="$(mktemp)"
+
+  attempt=1
+  while :; do
+    : >"$stdout_file"
+    : >"$stderr_file"
+    set +e
+    if command -v timeout >/dev/null 2>&1; then
+      timeout "${CLI_TIMEOUT_SECONDS}s" openclaw "$@" >"$stdout_file" 2>"$stderr_file"
+      status=$?
+    else
+      openclaw "$@" >"$stdout_file" 2>"$stderr_file"
+      status=$?
+    fi
+    set -e
+
+    stdout_text="$(cat "$stdout_file")"
+    stderr_text="$(cat "$stderr_file")"
+    combined_text="${stdout_text}"$'\n'"${stderr_text}"
+
+    if (( status == 0 )); then
+      if [[ -n "$stdout_text" ]]; then
+        printf '%s' "$stdout_text"
+      fi
+      if [[ -n "$stderr_text" ]]; then
+        printf '%s' "$stderr_text" >&2
+      fi
+      rm -f "$stdout_file" "$stderr_file"
+      return 0
+    fi
+
+    if ! should_retry_openclaw "$status" "$combined_text" "$@"; then
+      if [[ -n "$stdout_text" ]]; then
+        printf '%s' "$stdout_text"
+      fi
+      if [[ -n "$stderr_text" ]]; then
+        printf '%s' "$stderr_text" >&2
+      fi
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+
+    if (( attempt >= CLI_RETRIES )); then
+      if [[ -n "$stdout_text" ]]; then
+        printf '%s' "$stdout_text"
+      fi
+      if [[ -n "$stderr_text" ]]; then
+        printf '%s' "$stderr_text" >&2
+      fi
+      rm -f "$stdout_file" "$stderr_file"
+      return "$status"
+    fi
+
+    attempt=$((attempt + 1))
+    sleep "$CLI_RETRY_DELAY_SECONDS"
+  done
+}
+
+should_retry_openclaw() {
+  local status combined_text
+  status="$1"
+  combined_text="$2"
+  shift 2
+
+  if [[ "${1:-}" != "nodes" ]]; then
+    return 1
+  fi
+
+  if (( status == 124 )); then
+    return 0
+  fi
+
+  if grep -Eqi 'gateway closed|gateway connect failed|handshake timeout|closed before connect|unknown node:' <<<"$combined_text"; then
+    return 0
+  fi
+
+  return 1
+}
+
+build_run_params() {
+  local raw
+  raw="$*"
+  jq -nc --arg agent "$AGENT_ID" --arg raw "$raw" '{command:$ARGS.positional,rawCommand:$raw,agentId:$agent}' --args -- "$@"
+}
+
+invoke_run_json() {
+  local params
+  params="$1"
+  openclaw_cli nodes invoke --node "$NODE_NAME" --command system.run --params "$params" --json
+}
+
+invoke_prepare_json() {
+  local params
+  params="$1"
+  openclaw_cli nodes invoke --node "$NODE_NAME" --command system.run.prepare --params "$params" --json
+}
+
+capture_command_output() {
+  local __var_name output status
+  __var_name="$1"
+  shift
+  set +e
+  output="$("$@" 2>&1)"
+  status=$?
+  set -e
+  printf -v "$__var_name" '%s' "$output"
+  return "$status"
+}
+
+capture_run_text() {
+  local __var_name
+  __var_name="$1"
+  shift
+  capture_command_output "$__var_name" run_text "$@"
+}
+
+get_node_json() {
+  local status_json
+  status_json="$(openclaw_cli nodes status --json)"
+  jq -cer --arg node "$NODE_NAME" '.nodes[] | select(.displayName == $node)' <<<"$status_json"
+}
+
+resolve_toolchain_bins() {
+  if [[ $# -gt 0 ]]; then
+    printf '%s\n' "$@"
+    return
+  fi
+  printf '%s\n' "${TOOLCHAIN_DEFAULT_BINS[@]}"
+}
+
+resolve_policy_matrix_profile() {
+  local profile="${1:-dev}"
+  case "$profile" in
+    basic)
+      printf '%s\n' \
+        '/usr/bin/hostname' \
+        '/usr/bin/uname -a' \
+        '/usr/bin/cat /home/fzhlian/.openclaw/office-shell-hostname.txt' \
+        '/usr/bin/git --version' \
+        '/usr/bin/echo hello'
+      ;;
+    dev|"")
+      printf '%s\n' \
+        '/usr/bin/hostname' \
+        '/usr/bin/uname -a' \
+        '/usr/bin/cat /home/fzhlian/.openclaw/office-shell-hostname.txt' \
+        '/usr/bin/git --version' \
+        '/usr/bin/echo hello' \
+        '/usr/bin/python3 --version' \
+        '/usr/bin/node --version'
+      ;;
+    *)
+      echo "unknown policy-matrix profile: $profile" >&2
+      return 2
+      ;;
+  esac
+}
+
+get_system_which_json() {
+  local params
+  if [[ $# -eq 0 ]]; then
+    echo "at least one bin is required" >&2
+    return 2
+  fi
+  params="$(jq -nc '{bins:$ARGS.positional}' --args -- "$@")"
+  openclaw_cli nodes invoke --node "$NODE_NAME" --command system.which --params "$params" --json
+}
+
+get_exec_approvals_json() {
+  local approvals_text status
+  if capture_run_text approvals_text /usr/bin/cat "$EXEC_APPROVALS_PATH"; then
+    printf '%s' "$approvals_text"
+    return 0
+  fi
+  status=$?
+  if (( status == 1 )) && grep -qi 'No such file or directory' <<<"$approvals_text"; then
+    printf '%s\n' '{"version":1,"defaults":{},"agents":{}}'
+    return 0
+  fi
+  printf '%s' "$approvals_text" >&2
+  return "$status"
+}
+
+get_prepare_json() {
+  if [[ $# -eq 0 ]]; then
+    echo "at least one command arg is required" >&2
+    return 2
+  fi
+  invoke_prepare_json "$(build_run_params "$@")"
+}
+
+doctor() {
+  local status_json status_fetch_status status_fetch_error
+  local node_json connected paired platform version remote_ip caps commands
+  local connected_at_ms summary overall_status
+  local hostname_out proof_out proof_hostname_out git_version_out uname_out
+  local hostname_status proof_status proof_hostname_status git_version_status uname_status
+
+  connected="unknown"
+  paired="unknown"
+  platform=""
+  version=""
+  remote_ip=""
+  caps=""
+  commands=""
+  connected_at_ms=""
+  status_fetch_status=0
+  status_fetch_error=""
+
+  overall_status=0
+
+  if capture_command_output status_json openclaw_cli nodes status --json; then
+    if ! node_json="$(jq -cer --arg node "$NODE_NAME" '.nodes[] | select(.displayName == $node)' <<<"$status_json")"; then
+      status_fetch_status=1
+      status_fetch_error="node_not_found"
+      overall_status=1
+    else
+      connected="$(jq -r '.connected' <<<"$node_json")"
+      paired="$(jq -r '.paired' <<<"$node_json")"
+      platform="$(jq -r '.platform // ""' <<<"$node_json")"
+      version="$(jq -r '.version // ""' <<<"$node_json")"
+      remote_ip="$(jq -r '.remoteIp // ""' <<<"$node_json")"
+      caps="$(jq -r '(.caps // []) | join(",")' <<<"$node_json")"
+      commands="$(jq -r '(.commands // []) | join(",")' <<<"$node_json")"
+      connected_at_ms="$(jq -r '.connectedAtMs // ""' <<<"$node_json")"
+      if [[ "$connected" != "true" || "$paired" != "true" ]]; then
+        overall_status=1
+      fi
+    fi
+  else
+    status_fetch_status=$?
+    status_fetch_error="$(tr '\n' ' ' <<<"$status_json" | sed 's/[[:space:]]*$//')"
+    overall_status=1
+  fi
+
+  capture_run_text hostname_out /usr/bin/hostname || hostname_status=$?
+  hostname_status="${hostname_status:-0}"
+  capture_run_text proof_out /usr/bin/cat "/home/fzhlian/.openclaw/office-shell-proof.txt" || proof_status=$?
+  proof_status="${proof_status:-0}"
+  capture_run_text proof_hostname_out /usr/bin/cat "/home/fzhlian/.openclaw/office-shell-hostname.txt" || proof_hostname_status=$?
+  proof_hostname_status="${proof_hostname_status:-0}"
+  capture_run_text git_version_out /usr/bin/git --version || git_version_status=$?
+  git_version_status="${git_version_status:-0}"
+  capture_run_text uname_out /usr/bin/uname -a || uname_status=$?
+  uname_status="${uname_status:-0}"
+
+  if (( hostname_status != 0 || proof_status != 0 || proof_hostname_status != 0 || git_version_status != 0 || uname_status != 0 )); then
+    overall_status=1
+  fi
+
+  summary="ok"
+  if (( overall_status != 0 )); then
+    summary="degraded"
+  fi
+
+  echo "doctor_status=$summary"
+  echo "gateway_url=$OPENCLAW_GATEWAY_URL"
+  echo "config_path=$OPENCLAW_CONFIG_PATH"
+  echo "node=$NODE_NAME"
+  echo "agent=$AGENT_ID"
+  echo "status_fetch_status=$status_fetch_status"
+  echo "status_fetch_error=$(tr '\n' ' ' <<<"$status_fetch_error" | sed 's/[[:space:]]*$//')"
+  echo "connected=$connected"
+  echo "paired=$paired"
+  echo "platform=$platform"
+  echo "version=$version"
+  echo "remote_ip=$remote_ip"
+  echo "caps=$caps"
+  echo "commands=$commands"
+  echo "connected_at_ms=$connected_at_ms"
+  echo "hostname_status=$hostname_status"
+  echo "hostname=$(tr '\n' ' ' <<<"$hostname_out" | sed 's/[[:space:]]*$//')"
+  echo "proof_status=$proof_status"
+  echo "proof=$(tr '\n' ' ' <<<"$proof_out" | sed 's/[[:space:]]*$//')"
+  echo "proof_hostname_status=$proof_hostname_status"
+  echo "proof_hostname=$(tr '\n' ' ' <<<"$proof_hostname_out" | sed 's/[[:space:]]*$//')"
+  echo "git_version_status=$git_version_status"
+  echo "git_version=$(tr '\n' ' ' <<<"$git_version_out" | sed 's/[[:space:]]*$//')"
+  echo "uname_status=$uname_status"
+  echo "uname=$(tr '\n' ' ' <<<"$uname_out" | sed 's/[[:space:]]*$//')"
+
+  return "$overall_status"
+}
+
+doctor_json() {
+  doctor | jq -Rn '
+    reduce inputs as $line ({};
+      if ($line | test("=")) then
+        ($line | capture("^(?<k>[^=]+)=(?<v>.*)$")) as $kv
+        | .[$kv.k] = $kv.v
+      else
+        .
+      end
+    )
+  '
+}
+
+quick() {
+  local status_json status_fetch_status status_fetch_error
+  local node_json connected paired remote_ip
+  local hostname_out proof_hostname_out
+  local hostname_status proof_hostname_status overall_status summary
+
+  connected="unknown"
+  paired="unknown"
+  remote_ip=""
+  status_fetch_status=0
+  status_fetch_error=""
+  overall_status=0
+
+  if capture_command_output status_json openclaw_cli nodes status --json; then
+    if ! node_json="$(jq -cer --arg node "$NODE_NAME" '.nodes[] | select(.displayName == $node)' <<<"$status_json")"; then
+      status_fetch_status=1
+      status_fetch_error="node_not_found"
+      overall_status=1
+    else
+      connected="$(jq -r '.connected' <<<"$node_json")"
+      paired="$(jq -r '.paired' <<<"$node_json")"
+      remote_ip="$(jq -r '.remoteIp // ""' <<<"$node_json")"
+      if [[ "$connected" != "true" || "$paired" != "true" ]]; then
+        overall_status=1
+      fi
+    fi
+  else
+    status_fetch_status=$?
+    status_fetch_error="$(tr '\n' ' ' <<<"$status_json" | sed 's/[[:space:]]*$//')"
+    overall_status=1
+  fi
+
+  capture_run_text hostname_out /usr/bin/hostname || hostname_status=$?
+  hostname_status="${hostname_status:-0}"
+  capture_run_text proof_hostname_out /usr/bin/cat "/home/fzhlian/.openclaw/office-shell-hostname.txt" || proof_hostname_status=$?
+  proof_hostname_status="${proof_hostname_status:-0}"
+
+  if (( hostname_status != 0 || proof_hostname_status != 0 )); then
+    overall_status=1
+  fi
+
+  summary="ok"
+  if (( overall_status != 0 )); then
+    summary="degraded"
+  fi
+
+  echo "quick_status=$summary"
+  echo "node=$NODE_NAME"
+  echo "agent=$AGENT_ID"
+  echo "remote_ip=$remote_ip"
+  echo "status_fetch_status=$status_fetch_status"
+  echo "status_fetch_error=$(tr '\n' ' ' <<<"$status_fetch_error" | sed 's/[[:space:]]*$//')"
+  echo "connected=$connected"
+  echo "paired=$paired"
+  echo "hostname_status=$hostname_status"
+  echo "hostname=$(tr '\n' ' ' <<<"$hostname_out" | sed 's/[[:space:]]*$//')"
+  echo "proof_hostname_status=$proof_hostname_status"
+  echo "proof_hostname=$(tr '\n' ' ' <<<"$proof_hostname_out" | sed 's/[[:space:]]*$//')"
+
+  return "$overall_status"
+}
+
+toolchain_json() {
+  local bins=()
+  local which_json node_json path_env
+
+  while IFS= read -r bin; do
+    bins+=("$bin")
+  done < <(resolve_toolchain_bins "$@")
+
+  which_json="$(get_system_which_json "${bins[@]}")"
+  node_json="$(get_node_json)"
+  path_env="$(jq -r '.pathEnv // ""' <<<"$node_json")"
+
+  jq -nc \
+    --arg node "$NODE_NAME" \
+    --arg agent "$AGENT_ID" \
+    --arg pathEnv "$path_env" \
+    --argjson requested "$(printf '%s\n' "${bins[@]}" | jq -R . | jq -s .)" \
+    --argjson found "$(jq -c '.payload.bins // {}' <<<"$which_json")" '
+      {
+        node: $node,
+        agent: $agent,
+        pathEnv: $pathEnv,
+        requested: $requested,
+        found: $found,
+        present: ($requested | map(select($found[.] != null))),
+        missing: ($requested | map(select($found[.] == null)))
+      }
+    '
+}
+
+toolchain() {
+  local toolchain_json_output
+  toolchain_json_output="$(toolchain_json "$@")"
+  jq -r '
+    "toolchain_status=ok",
+    ("node=" + .node),
+    ("agent=" + .agent),
+    ("requested=" + (.requested | join(","))),
+    ("present=" + (.present | join(","))),
+    ("missing=" + (.missing | join(","))),
+    (.requested[] as $bin | ($bin + "=" + (.found[$bin] // ""))),
+    ("path=" + .pathEnv)
+  ' <<<"$toolchain_json_output"
+}
+
+approvals_json() {
+  local approvals_json_output
+  approvals_json_output="$(get_exec_approvals_json)"
+
+  jq -nc \
+    --arg node "$NODE_NAME" \
+    --arg agent "$AGENT_ID" \
+    --arg path "$EXEC_APPROVALS_PATH" \
+    --arg rawJson "$approvals_json_output" '
+      ($rawJson | fromjson) as $raw
+      |
+      {
+        node: $node,
+        agent: $agent,
+        path: $path,
+        version: ($raw.version // null),
+        socketPath: ($raw.socket.path // ""),
+        defaults: ($raw.defaults // {}),
+        allowlist: ($raw.agents[$agent].allowlist // []),
+        allowlistCount: (($raw.agents[$agent].allowlist // []) | length)
+      }
+    '
+}
+
+approvals() {
+  local approvals_json_output
+  approvals_json_output="$(approvals_json)"
+  jq -r '
+    "approvals_status=ok",
+    ("node=" + .node),
+    ("agent=" + .agent),
+    ("path=" + .path),
+    ("socket_path=" + .socketPath),
+    ("allowlist_count=" + (.allowlistCount | tostring)),
+    (.allowlist[]? | "pattern=" + (.pattern // "") + "\tlast_resolved_path=" + (.lastResolvedPath // "") + "\tlast_used_command=" + (.lastUsedCommand // ""))
+  ' <<<"$approvals_json_output"
+}
+
+policy_json() {
+  local argv=()
+  local argv0 raw prepare_output prepare_status approvals_json_output approvals_status
+  local prepare_ok prepare_error decision approvals_error
+
+  if [[ $# -eq 0 ]]; then
+    echo "at least one command arg is required" >&2
+    return 2
+  fi
+
+  argv=("$@")
+  argv0="${argv[0]}"
+  raw="$*"
+  approvals_status=0
+  approvals_error=""
+  if ! capture_command_output approvals_json_output approvals_json; then
+    approvals_status=$?
+    approvals_error="$(tr '\n' ' ' <<<"$approvals_json_output" | sed 's/[[:space:]]*$//')"
+    approvals_json_output='{"node":"","agent":"","path":"","version":1,"socketPath":"","defaults":{},"allowlist":[],"allowlistCount":0}'
+  fi
+
+  prepare_ok=false
+  prepare_status=0
+  prepare_output=""
+  if capture_command_output prepare_output get_prepare_json "${argv[@]}"; then
+    prepare_ok=true
+  else
+    prepare_status=$?
+  fi
+
+  decision="review"
+  if [[ "$prepare_ok" == "true" ]]; then
+    if jq -e --arg argv0 "$argv0" '(.allowlist // []) | any(.pattern == $argv0)' <<<"$approvals_json_output" >/dev/null; then
+      decision="ready"
+    else
+      decision="review"
+    fi
+  else
+    decision="denied"
+  fi
+
+  prepare_error=""
+  if [[ "$prepare_ok" != "true" ]]; then
+    prepare_error="$(tr '\n' ' ' <<<"$prepare_output" | sed 's/[[:space:]]*$//')"
+  fi
+
+  jq -nc \
+    --arg node "$NODE_NAME" \
+    --arg agent "$AGENT_ID" \
+    --arg raw "$raw" \
+    --arg argv0 "$argv0" \
+    --arg argvJson "$(printf '%s\n' "${argv[@]}" | jq -R . | jq -s -c .)" \
+    --arg approvalsJson "$approvals_json_output" \
+    --arg approvalsError "$approvals_error" \
+    --arg approvalsStatus "$approvals_status" \
+    --arg prepareOk "$prepare_ok" \
+    --arg prepareError "$prepare_error" \
+    --arg prepareStatus "$prepare_status" \
+    --arg decision "$decision" \
+    --arg prepareOutput "$prepare_output" '
+      ($argvJson | fromjson) as $argv
+      | ($approvalsJson | fromjson) as $approvals
+      |
+      {
+        node: $node,
+        agent: $agent,
+        rawCommand: $raw,
+        argv0: $argv0,
+        argv: $argv,
+        decision: $decision,
+        approvals: {
+          ok: ($approvalsStatus == "0"),
+          status: ($approvalsStatus | tonumber),
+          error: $approvalsError
+        },
+        allowlistCount: ($approvals.allowlistCount // 0),
+        allowlistMatch: (($approvals.allowlist // []) | any(.pattern == $argv0)),
+        allowlistMatches: (($approvals.allowlist // []) | map(select(.pattern == $argv0))),
+        prepare: (
+          if ($prepareOk == "true") then
+            {
+              ok: true,
+              status: 0,
+              payload: (($prepareOutput | fromjson).payload // null)
+            }
+          else
+            {
+              ok: false,
+              status: ($prepareStatus | tonumber),
+              error: $prepareError
+            }
+          end
+        )
+      }
+    '
+}
+
+policy() {
+  local policy_json_output
+  policy_json_output="$(policy_json "$@")"
+  jq -r '
+    (
+      if .decision == "ready" then "policy_status=ready"
+      elif .decision == "review" then "policy_status=review"
+      else "policy_status=denied"
+      end
+    ),
+    ("node=" + .node),
+    ("agent=" + .agent),
+    ("raw_command=" + .rawCommand),
+    ("argv0=" + .argv0),
+    ("approvals_ok=" + (.approvals.ok | tostring)),
+    ("approvals_status=" + (.approvals.status | tostring)),
+    (
+      if (.approvals.error // "") != "" then
+        "approvals_error=" + .approvals.error
+      else
+        empty
+      end
+    ),
+    ("allowlist_match=" + (.allowlistMatch | tostring)),
+    ("allowlist_count=" + (.allowlistCount | tostring)),
+    (.allowlistMatches[]? | "allowlist_pattern=" + (.pattern // "")),
+    ("prepare_ok=" + (.prepare.ok | tostring)),
+    ("prepare_status=" + (.prepare.status | tostring)),
+    (
+      if .prepare.ok then
+        "prepare_command_text=" + (.prepare.payload.plan.commandText // "")
+      else
+        "prepare_error=" + (.prepare.error // "")
+      end
+    )
+  ' <<<"$policy_json_output"
+}
+
+policy_matrix_json() {
+  local profile="${1:-dev}"
+  local command_line prepare_output error_text approvals_json_output approvals_status approvals_error
+  local -a argv=()
+  local objects_file
+
+  objects_file="$(mktemp)"
+  approvals_status=0
+  approvals_error=""
+  if ! capture_command_output approvals_json_output approvals_json; then
+    approvals_status=$?
+    approvals_error="$(tr '\n' ' ' <<<"$approvals_json_output" | sed 's/[[:space:]]*$//')"
+    approvals_json_output='{"node":"","agent":"","path":"","version":1,"socketPath":"","defaults":{},"allowlist":[],"allowlistCount":0}'
+  fi
+
+  while IFS= read -r command_line; do
+    [[ -n "$command_line" ]] || continue
+    read -r -a argv <<<"$command_line"
+    if capture_command_output prepare_output get_prepare_json "${argv[@]}"; then
+      jq -nc \
+        --arg node "$NODE_NAME" \
+        --arg agent "$AGENT_ID" \
+        --arg raw "$command_line" \
+        --arg argv0 "${argv[0]:-}" \
+        --arg argvJson "$(printf '%s\n' "${argv[@]}" | jq -R . | jq -s -c .)" \
+        --arg approvalsJson "$approvals_json_output" \
+        --arg approvalsError "$approvals_error" \
+        --arg approvalsStatus "$approvals_status" \
+        --arg prepareOutput "$prepare_output" '
+          ($argvJson | fromjson) as $argv
+          | ($approvalsJson | fromjson) as $approvals
+          | (($approvals.allowlist // []) | map(select(.pattern == $argv0))) as $matches
+          | {
+              node: $node,
+              agent: $agent,
+              rawCommand: $raw,
+              argv0: $argv0,
+              argv: $argv,
+              decision: (if ($matches | length) > 0 then "ready" else "review" end),
+              approvals: {
+                ok: ($approvalsStatus == "0"),
+                status: ($approvalsStatus | tonumber),
+                error: $approvalsError
+              },
+              allowlistCount: ($approvals.allowlistCount // 0),
+              allowlistMatch: (($matches | length) > 0),
+              allowlistMatches: $matches,
+              prepare: {
+                ok: true,
+                status: 0,
+                payload: (($prepareOutput | fromjson).payload // null)
+              }
+            }
+        ' >>"$objects_file"
+    else
+      error_text="$(tr '\n' ' ' <<<"$prepare_output" | sed 's/[[:space:]]*$//')"
+      jq -nc \
+        --arg node "$NODE_NAME" \
+        --arg agent "$AGENT_ID" \
+        --arg raw "$command_line" \
+        --arg argv0 "${argv[0]:-}" \
+        --arg argvJson "$(printf '%s\n' "${argv[@]}" | jq -R . | jq -s -c .)" \
+        --arg approvalsError "$approvals_error" \
+        --arg approvalsStatus "$approvals_status" \
+        --arg approvalsJson "$approvals_json_output" \
+        --arg error "$error_text" '
+          ($argvJson | fromjson) as $argv
+          | ($approvalsJson | fromjson) as $approvals
+          | (($approvals.allowlist // []) | map(select(.pattern == $argv0))) as $matches
+          |
+          {
+            node: $node,
+            agent: $agent,
+            rawCommand: $raw,
+            argv0: $argv0,
+            argv: $argv,
+            decision: (
+              if ($error | test("SYSTEM_RUN_DENIED|approval cannot safely bind"; "i")) then
+                "denied"
+              else
+                "error"
+              end
+            ),
+            approvals: {
+              ok: ($approvalsStatus == "0"),
+              status: ($approvalsStatus | tonumber),
+              error: $approvalsError
+            },
+            allowlistCount: ($approvals.allowlistCount // 0),
+            allowlistMatch: (($matches | length) > 0),
+            allowlistMatches: $matches,
+            prepare: {
+              ok: false,
+              status: 1,
+              error: $error
+            }
+          }
+        ' >>"$objects_file"
+    fi
+  done < <(resolve_policy_matrix_profile "$profile")
+
+  jq -s \
+    --arg profile "$profile" '
+      . as $items
+      | {
+          profile: $profile,
+          itemCount: ($items | length),
+          readyCount: ($items | map(select(.decision == "ready")) | length),
+          reviewCount: ($items | map(select(.decision == "review")) | length),
+          deniedCount: ($items | map(select(.decision == "denied")) | length),
+          errorCount: ($items | map(select(.decision == "error")) | length),
+          items: $items
+        }
+    ' "$objects_file"
+
+  rm -f "$objects_file"
+}
+
+policy_matrix() {
+  local matrix_json_output
+  matrix_json_output="$(policy_matrix_json "${1:-dev}")"
+  jq -r '
+    "policy_matrix_status=ok",
+    ("profile=" + .profile),
+    ("item_count=" + (.itemCount | tostring)),
+    ("ready_count=" + (.readyCount | tostring)),
+    ("review_count=" + (.reviewCount | tostring)),
+    ("denied_count=" + (.deniedCount | tostring)),
+    ("error_count=" + (.errorCount | tostring)),
+    (.items[] | "decision=" + .decision + "\traw_command=" + .rawCommand)
+  ' <<<"$matrix_json_output"
+}
+
+run_text() {
+  local json stdout stderr timed_out exit_code
+  json="$(invoke_run_json "$(build_run_params "$@")")"
+  stdout="$(jq -r '.payload.stdout // ""' <<<"$json")"
+  stderr="$(jq -r '.payload.stderr // ""' <<<"$json")"
+  timed_out="$(jq -r '.payload.timedOut // false' <<<"$json")"
+  exit_code="$(jq -r '.payload.exitCode // 0' <<<"$json")"
+  if [[ -n "$stdout" ]]; then
+    printf '%s' "$stdout"
+  fi
+  if [[ -n "$stderr" ]]; then
+    printf '%s' "$stderr" >&2
+  fi
+  if [[ "$timed_out" == "true" ]]; then
+    echo "remote command timed out" >&2
+    return 124
+  fi
+  if [[ "$exit_code" =~ ^[0-9]+$ ]]; then
+    return "$exit_code"
+  fi
+  return 1
+}
+
+cmd="${1:-}"
+case "$cmd" in
+  quick)
+    quick
+    ;;
+  doctor)
+    doctor
+    ;;
+  doctor-json)
+    doctor_json
+    ;;
+  status)
+    openclaw_cli nodes status --json
+    ;;
+  describe)
+    openclaw_cli nodes describe --node "$NODE_NAME" --json
+    ;;
+  caps)
+    get_node_json | jq -c '{node:.displayName,caps:(.caps // []),commands:(.commands // []),platform:(.platform // ""),version:(.version // "")}'
+    ;;
+  path)
+    get_node_json | jq -r '.pathEnv // ""'
+    ;;
+  approvals)
+    approvals
+    ;;
+  approvals-json)
+    approvals_json
+    ;;
+  policy)
+    shift
+    policy "$@"
+    ;;
+  policy-json)
+    shift
+    policy_json "$@"
+    ;;
+  policy-matrix)
+    shift
+    policy_matrix "${1:-dev}"
+    ;;
+  policy-matrix-json)
+    shift
+    policy_matrix_json "${1:-dev}"
+    ;;
+  toolchain)
+    shift
+    toolchain "$@"
+    ;;
+  toolchain-json)
+    shift
+    toolchain_json "$@"
+    ;;
+  which)
+    shift
+    if [[ $# -eq 0 ]]; then
+      usage >&2
+      exit 2
+    fi
+    params="$(jq -nc '{bins:$ARGS.positional}' --args -- "$@")"
+    openclaw_cli nodes invoke --node "$NODE_NAME" --command system.which --params "$params" --json
+    ;;
+  prepare)
+    shift
+    if [[ $# -eq 0 ]]; then
+      usage >&2
+      exit 2
+    fi
+    raw="$*"
+    params="$(jq -nc --arg agent "$AGENT_ID" --arg raw "$raw" '{command:$ARGS.positional,rawCommand:$raw,agentId:$agent}' --args -- "$@")"
+    openclaw_cli nodes invoke --node "$NODE_NAME" --command system.run.prepare --params "$params" --json
+    ;;
+  run)
+    shift
+    if [[ $# -eq 0 ]]; then
+      usage >&2
+      exit 2
+    fi
+    params="$(build_run_params "$@")"
+    openclaw_cli nodes invoke --node "$NODE_NAME" --command system.run --params "$params" --json
+    ;;
+  exec)
+    shift
+    if [[ $# -eq 0 ]]; then
+      usage >&2
+      exit 2
+    fi
+    run_text "$@"
+    ;;
+  hostname)
+    run_text /usr/bin/hostname
+    ;;
+  git-version)
+    run_text /usr/bin/git --version
+    ;;
+  uname)
+    run_text /usr/bin/uname -a
+    ;;
+  read)
+    shift
+    if [[ $# -ne 1 ]]; then
+      usage >&2
+      exit 2
+    fi
+    run_text /usr/bin/cat "$1"
+    ;;
+  proof)
+    run_text /usr/bin/cat "/home/fzhlian/.openclaw/office-shell-proof.txt"
+    ;;
+  proof-hostname)
+    run_text /usr/bin/cat "/home/fzhlian/.openclaw/office-shell-hostname.txt"
+    ;;
+  -h|--help|help|"")
+    usage
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

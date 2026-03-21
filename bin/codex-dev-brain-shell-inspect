@@ -1,0 +1,240 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+DEFAULT_REPO="/home/fzhlian/Code/codex-dev"
+REPO_DIR="${CODEX_DEV_DEFAULT_WORKDIR:-$DEFAULT_REPO}"
+OPENCLAW_HOME="${OPENCLAW_HOME:-$HOME/.openclaw}"
+OPENCLAW_JSON="$OPENCLAW_HOME/openclaw.json"
+
+if [ ! -d "$REPO_DIR" ]; then
+  echo "Repo dir does not exist: $REPO_DIR" >&2
+  exit 1
+fi
+
+if [ ! -f "$OPENCLAW_JSON" ]; then
+  echo "OpenClaw config does not exist: $OPENCLAW_JSON" >&2
+  exit 1
+fi
+
+is_wsl="no"
+if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then
+  is_wsl="yes"
+fi
+
+print_service_status() {
+  local service="$1"
+  if systemctl --user list-unit-files "$service" >/dev/null 2>&1; then
+    systemctl --user is-active "$service" 2>/dev/null || true
+  else
+    echo "missing"
+  fi
+}
+
+printf '## linux_host\n'
+printf 'repo_dir=%s\n' "$REPO_DIR"
+printf 'openclaw_home=%s\n' "$OPENCLAW_HOME"
+printf 'kernel=%s\n' "$(uname -srmo)"
+printf 'is_wsl=%s\n' "$is_wsl"
+python3 - "$OPENCLAW_JSON" <<'PY'
+import json
+import platform
+import subprocess
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+print(f"os={platform.platform()}")
+print(f"gateway_bind={data.get('gateway', {}).get('bind', '')}")
+print(f"gateway_auth_mode={data.get('gateway', {}).get('auth', {}).get('mode', '')}")
+print(f"gateway_auth_allow_tailscale={data.get('gateway', {}).get('auth', {}).get('allowTailscale', '')}")
+print(f"gateway_tailscale_mode={data.get('gateway', {}).get('tailscale', {}).get('mode', '')}")
+print(f"gateway_nodes_count={len(data.get('gateway', {}).get('nodes', {}))}")
+agents = [agent.get("id", "") for agent in data.get("agents", {}).get("list", []) if agent.get("id")]
+non_main_agents = [agent for agent in agents if agent != "main"]
+print(f"agents={','.join(agents) if agents else 'none'}")
+print(f"non_main_agents={','.join(non_main_agents) if non_main_agents else 'none'}")
+node_bound_agents = []
+for agent in data.get("agents", {}).get("list", []):
+    agent_id = agent.get("id", "")
+    exec_cfg = (agent.get("tools") or {}).get("exec") or {}
+    if exec_cfg.get("host") == "node":
+        node_bound_agents.append(agent_id or "unknown")
+print(f"node_bound_agents={','.join(node_bound_agents) if node_bound_agents else 'none'}")
+telegram = data.get("channels", {}).get("telegram", {})
+exec_approvals = telegram.get("execApprovals", {})
+print(f"telegram_enabled={'yes' if telegram.get('enabled') else 'no'}")
+print(f"telegram_exec_approvals={'yes' if exec_approvals.get('enabled') else 'no'}")
+print(f"telegram_exec_agent_filter={','.join(exec_approvals.get('agentFilter', [])) if exec_approvals.get('agentFilter') else 'none'}")
+try:
+    out = subprocess.run(["tailscale", "status", "--json"], capture_output=True, text=True, check=False)
+    if out.returncode == 0 and out.stdout.strip():
+        ts = json.loads(out.stdout)
+        dns_name = (((ts.get("Self") or {}).get("DNSName") or "").rstrip("."))
+        if dns_name:
+            print(f"tailscale_dns_name={dns_name}")
+except Exception:
+    pass
+PY
+printf 'gateway_service=%s\n' "$(print_service_status openclaw-gateway.service)"
+printf 'router_service=%s\n' "$(print_service_status openclaw-router.service)"
+printf 'linux_ipv4='
+ip -brief -4 addr | awk '$1 != "lo" {printf("%s=%s ", $1, $3)}'
+printf '\n'
+printf 'linux_tailscale=%s\n' "$(command -v tailscale >/dev/null 2>&1 && echo yes || echo no)"
+
+printf '\n## windows_host\n'
+if [ "$is_wsl" = "yes" ] && command -v powershell.exe >/dev/null 2>&1; then
+  python3 - <<'PY'
+import json
+import subprocess
+import sys
+
+def run_ps(script: str) -> str:
+    cmd = ["powershell.exe", "-NoProfile", "-Command", script]
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    return (proc.stdout or "").strip()
+
+ips_raw = run_ps('[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" } | Select-Object InterfaceAlias,IPAddress | ConvertTo-Json -Compress')
+if not ips_raw:
+    print("windows_available=no")
+    sys.exit(0)
+
+print("windows_available=yes")
+try:
+    parsed = json.loads(ips_raw)
+    if isinstance(parsed, dict):
+        parsed = [parsed]
+except json.JSONDecodeError:
+    parsed = []
+
+filtered = []
+for row in parsed:
+    ip = row.get("IPAddress", "")
+    if not ip or ip.startswith("169.254."):
+        continue
+    filtered.append(f"{row.get('InterfaceAlias', 'unknown')}={ip}")
+print(f"windows_ipv4={';'.join(filtered) if filtered else 'none'}")
+
+sshd_raw = run_ps('[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; $svc = Get-Service sshd -ErrorAction SilentlyContinue; if ($null -eq $svc) { "null" } else { $svc | Select-Object Status,Name,StartType | ConvertTo-Json -Compress }')
+if sshd_raw and sshd_raw != "null":
+    try:
+        sshd = json.loads(sshd_raw)
+        print(f"windows_sshd=yes ({sshd.get('Status', 'unknown')}, start={sshd.get('StartType', 'unknown')})")
+    except json.JSONDecodeError:
+        print("windows_sshd=unknown")
+else:
+    print("windows_sshd=no")
+
+tailscale_raw = run_ps('[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; $cmd = Get-Command tailscale -ErrorAction SilentlyContinue; if ($null -eq $cmd) { "null" } else { $cmd | Select-Object Source | ConvertTo-Json -Compress }')
+if tailscale_raw and tailscale_raw != "null":
+    try:
+        tailscale = json.loads(tailscale_raw)
+        print(f"windows_tailscale=yes ({tailscale.get('Source', 'unknown')})")
+    except json.JSONDecodeError:
+        print("windows_tailscale=yes")
+else:
+    print("windows_tailscale=no")
+
+portproxy_raw = run_ps('[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; $out = netsh interface portproxy show all | Out-String; $trim = $out.Trim(); if ([string]::IsNullOrWhiteSpace($trim)) { "none" } else { $trim }')
+if not portproxy_raw or portproxy_raw == "none":
+    print("windows_portproxy=none")
+else:
+    one_line = " | ".join(line.strip() for line in portproxy_raw.splitlines() if line.strip())
+    print(f"windows_portproxy={one_line}")
+PY
+else
+  printf 'windows_available=no\n'
+fi
+
+printf '\n## assessment\n'
+python3 - "$OPENCLAW_JSON" "$is_wsl" "$(command -v tailscale >/dev/null 2>&1 && echo yes || echo no)" <<'PY'
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+is_wsl = sys.argv[2] == "yes"
+linux_tailscale = sys.argv[3] == "yes"
+
+gateway = data.get("gateway", {})
+bind = gateway.get("bind", "")
+tailscale_mode = gateway.get("tailscale", {}).get("mode", "")
+allow_tailscale = gateway.get("auth", {}).get("allowTailscale")
+nodes_count = len(gateway.get("nodes", {}))
+
+windows_sshd = False
+windows_tailscale = False
+windows_portproxy = False
+
+if is_wsl:
+    try:
+        sshd = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command", '[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; $svc = Get-Service sshd -ErrorAction SilentlyContinue; if ($null -eq $svc) { "null" } else { "yes" }'],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout.strip()
+        windows_sshd = sshd == "yes"
+        tailscale = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command", '[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; $cmd = Get-Command tailscale -ErrorAction SilentlyContinue; if ($null -eq $cmd) { "null" } else { "yes" }'],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout.strip()
+        windows_tailscale = tailscale == "yes"
+        portproxy = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command", '[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; $out = netsh interface portproxy show all | Out-String; if ([string]::IsNullOrWhiteSpace($out.Trim())) { "none" } else { "yes" }'],
+            capture_output=True,
+            text=True,
+            check=False,
+        ).stdout.strip()
+        windows_portproxy = portproxy == "yes"
+    except FileNotFoundError:
+        pass
+
+blockers = []
+if nodes_count == 0:
+    blockers.append("no_paired_node")
+serve_ready = linux_tailscale and tailscale_mode == "serve"
+tailnet_direct_ready = linux_tailscale and bind == "tailnet"
+
+if bind == "loopback" and not serve_ready:
+    blockers.append("gateway_loopback_only")
+if is_wsl and not serve_ready:
+    blockers.append("gateway_runs_in_wsl2")
+    if not linux_tailscale:
+        blockers.append("wsl_tailscale_missing")
+    if not windows_tailscale:
+        blockers.append("windows_tailscale_missing")
+    if not windows_sshd:
+        blockers.append("windows_sshd_missing")
+    if not windows_portproxy:
+        blockers.append("windows_portproxy_missing")
+
+remote_ready = "yes"
+if nodes_count == 0:
+    remote_ready = "no"
+if bind == "loopback" and not serve_ready and not (is_wsl and windows_sshd):
+    remote_ready = "no"
+if is_wsl and not serve_ready and not tailnet_direct_ready and not linux_tailscale and not (windows_tailscale and windows_portproxy):
+    remote_ready = "no"
+
+if is_wsl and serve_ready:
+    recommended = "pair_office_node_over_tailscale_serve_then_bind_exec_to_node"
+elif is_wsl:
+    if linux_tailscale:
+        recommended = "finish_wsl_tailscale_gateway_exposure_then_pair_node"
+    else:
+        recommended = "install_tailscale_inside_wsl_first"
+else:
+    recommended = "choose_tailnet_or_ssh_tunnel_then_pair_node"
+
+print(f"remote_shell_ready={remote_ready}")
+print(f"blockers={','.join(blockers) if blockers else 'none'}")
+print(f"gateway_exposure={'tailscale_serve' if serve_ready else 'tailnet_bind' if tailnet_direct_ready else 'local_only'}")
+if serve_ready:
+    print(f"serve_requires_token={'yes' if allow_tailscale is False else 'no'}")
+print(f"recommended_path={recommended}")
+print("note=node_host_only_moves_exec_and_host_tools_not_the_agent_workspace")
+PY

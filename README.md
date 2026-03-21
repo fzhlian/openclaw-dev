@@ -33,7 +33,18 @@ The primary project in this repository is `codex-dev`, which provides:
 ./bin/codex-dev "修复一个小问题并总结修改"
 ./bin/codex-dev-status <job-id>
 ./bin/codex-dev-show <job-id>
+./bin/openclaw-office-shell status
+./bin/openclaw-office-shell quick
+./bin/openclaw-office-shell doctor
+./bin/openclaw-office-shell caps
+./bin/openclaw-office-shell approvals
+./bin/openclaw-office-shell policy /usr/bin/git --version
+./bin/openclaw-office-shell toolchain
+./bin/openclaw-office-shell hostname
 ```
+
+`openclaw-office-shell` talks to the local brain gateway over `ws://127.0.0.1:18789`
+and now retries transient loopback failures automatically.
 
 如需直接在 Telegram 中审批新的执行请求，请在本地 OpenClaw 配置里启用 `channels.telegram.execApprovals`。  
 If you want to approve new exec requests directly from Telegram, enable `channels.telegram.execApprovals` in your local OpenClaw config.
@@ -59,6 +70,7 @@ Recommended reading:
 - [`docs/assets-inventory.md`](docs/assets-inventory.md)
 - [`docs/migration.md`](docs/migration.md)
 - [`docs/conventions.md`](docs/conventions.md)
+- [`docs/wsl-brain-shell-runbook.md`](docs/wsl-brain-shell-runbook.md)
 - [`docs/security-hardening.md`](docs/security-hardening.md)
 - [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
@@ -75,6 +87,7 @@ The following local entrypoints should resolve to this project:
 - `~/bin/codex-dev-show`
 - `~/bin/codex-dev-dispatch`
 - `~/bin/codex-dev-worker`
+- `~/bin/openclaw-office-shell`
 
 ## 发布 | Publishing
 

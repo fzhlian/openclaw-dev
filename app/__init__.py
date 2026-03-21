@@ -1,0 +1,2 @@
+"""Article digest application package."""
+

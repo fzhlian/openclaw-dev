@@ -54,13 +54,15 @@ Additional operator setup:
 ### 3. Secret Tokens Moved Out of Main Config | 将敏感 token 移出主配置
 
 - Moved Telegram bot token and gateway token out of `openclaw.json`
+- Moved the Gemini web-search API key out of `openclaw.json` plaintext into an env SecretRef
 - Added local secret file: `~/.openclaw/.env`
 - Replaced plaintext config values with env references:
   - `${OPENCLAW_TELEGRAM_BOT_TOKEN}`
   - `${OPENCLAW_GATEWAY_TOKEN}`
+  - `{ "source": "env", "provider": "default", "id": "GEMINI_API_KEY" }`
 
 Result: the main runtime config no longer stores these secrets in plaintext.  
-结果：主运行配置文件中已不再直接保存这两个明文 secret。
+结果：主运行配置文件中已不再直接保存这些明文 secret。
 
 ### 4. Removed WhatsApp State | 清理 WhatsApp 状态
 
@@ -87,6 +89,7 @@ Result: local credential exposure risk is materially lower than before.
 - Set global `tools.profile` to `coding`
 - Pinned `clawrouter` install spec to an exact version
 - Removed ineffective `gateway.nodes.denyCommands` entries instead of keeping misleading pseudo-protection
+- Disabled `autoAllowSkills` in exec approvals so skill-provided executables are no longer implicitly allowlisted
 
 Result: the plugin reachability warning was removed and the remaining tool policy is closer to an intentional coding-only baseline.  
 结果：插件工具可达性告警已消除，当前工具策略更接近“有意收敛的开发基线”。
