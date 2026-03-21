@@ -45,6 +45,25 @@ SOURCE_PATTERNS = [
     META_PATTERN_TEMPLATE.format(name="application-name"),
 ]
 LANG_PATTERN = r"<html[^>]+lang=[\"']([^\"']+)[\"']"
+ACCESS_GATE_STRONG_PHRASES = (
+    "当前环境异常",
+    "完成验证后即可继续访问",
+    "请完成验证后继续访问",
+    "访问过于频繁",
+    "系统检测到异常流量",
+    "请在微信客户端打开链接",
+    "请在微信中打开",
+    "verify you are human",
+    "captcha",
+)
+ACCESS_GATE_WEAK_PHRASES = (
+    "环境异常",
+    "去验证",
+    "继续访问",
+    "异常流量",
+    "人机验证",
+    "机器人",
+)
 
 
 class ExtractionError(RuntimeError):
@@ -90,6 +109,16 @@ def _extract_main_text(html: str) -> str:
     return clean_text(strip_html(html))
 
 
+def _looks_like_access_gate(html: str, text: str) -> bool:
+    normalized_html = clean_text(strip_html(html)).lower()
+    normalized_text = clean_text(text).lower()
+    combined = f"{normalized_html}\n{normalized_text}"
+    if any(phrase.lower() in combined for phrase in ACCESS_GATE_STRONG_PHRASES):
+        return True
+    weak_hits = sum(1 for phrase in ACCESS_GATE_WEAK_PHRASES if phrase.lower() in combined)
+    return weak_hits >= 2 and word_count(normalized_text) < 120
+
+
 def extract_article(
     url: str,
     *,
@@ -107,6 +136,8 @@ def extract_article(
     text = _extract_main_text(html)
     if not text:
         raise ExtractionError("无法从页面中提取正文")
+    if _looks_like_access_gate(html, text):
+        raise ExtractionError("页面返回访问验证或异常环境页面，未获取到文章正文")
     fetched_at = utc_now_iso()
     article_hash = url_hash(normalized)
     title = first_non_empty((_search_first(TITLE_PATTERNS, html),), "未命名文章")

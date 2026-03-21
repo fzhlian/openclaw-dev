@@ -18,6 +18,7 @@ from app.db import (
     list_articles_by_status,
     mark_article_status,
     record_delivery,
+    reset_article_for_retry,
     set_settings,
     update_article_success,
     update_articles_status,
@@ -116,10 +117,21 @@ def ingest_url(
     article_hash = url_hash(normalized)
     existing = get_article_by_hash(database, article_hash)
     if existing:
-        payload = article_row_to_payload(existing)
-        validate_article_payload(payload)
-        return {"status": "duplicate", "url": normalized, "article": payload}
-    article_id = create_article_stub(database, url=normalized, url_hash=article_hash, fetched_at=utc_now_iso(), status="extracting")
+        existing_status = str(existing["status"] or "")
+        if existing_status == "send_failed":
+            mark_article_status(database, int(existing["id"]), "queued", error_message=None)
+            payload = article_row_to_payload(get_article_by_hash(database, article_hash))
+            validate_article_payload(payload)
+            return {"status": "queued", "message": "已重新加入待发送列表", "article": payload}
+        if existing_status in {"extract_failed", "analysis_failed"}:
+            article_id = int(existing["id"])
+            reset_article_for_retry(database, article_id, fetched_at=utc_now_iso(), status="extracting")
+        else:
+            payload = article_row_to_payload(existing)
+            validate_article_payload(payload)
+            return {"status": "duplicate", "url": normalized, "article": payload}
+    else:
+        article_id = create_article_stub(database, url=normalized, url_hash=article_hash, fetched_at=utc_now_iso(), status="extracting")
     try:
         article = extract_article(
             normalized,

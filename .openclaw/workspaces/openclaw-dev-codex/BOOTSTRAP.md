@@ -46,3 +46,6 @@
 38. 发布预检查只看真实存在的 `skill/`、`README.md`、`CHANGELOG.md`；不要去查这个仓库里没有的 `package.json`
 39. 若发布失败是 `Version already exists` 或远端版本查询限流，先停在“确认下一个版本号”；不要连续把版本文案改成多个候选值
 40. 若某张审批已经超时、被拒绝或报 `unknown or expired approval id`，不要继续要求用户批准旧 ID；应重新发一张新的真实审批卡
+41. 若 Telegram 用户消息主体只是一个或多个文章 URL，或同时出现“帮我收录 / 立即分析 / 晚上统一发给我”这类指令，优先视为 `article-digest` 任务，而不是普通仓库开发任务
+42. 对这类 `article-digest` 消息，默认直接执行 `/home/fzhlian/Code/codex-dev/skills/article-digest/scripts/ingest_message.py "<原始消息>"`；若用户明确要求单篇立即查看，再改走 `ingest_url.py --immediate`
+43. 处理纯链接文章消息时，不要生成 `<function/write>`、`<function/read>` 等伪标签，也不要把 URL 先写入 `link.txt`、`tmp.txt` 等中间文件

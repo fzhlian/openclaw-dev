@@ -157,6 +157,29 @@ def mark_article_status(
     conn.commit()
 
 
+def reset_article_for_retry(
+    conn: sqlite3.Connection,
+    article_id: int,
+    *,
+    fetched_at: str,
+    status: str = "extracting",
+) -> None:
+    conn.execute(
+        """
+        UPDATE articles
+        SET title = NULL, source = NULL, author = NULL, language = NULL, published_at = NULL,
+            fetched_at = ?, raw_html_path = NULL, extracted_text_path = NULL, summary = NULL,
+            main_threads_json = NULL, credibility_score = NULL, credibility_level = NULL,
+            credibility_reasons_json = NULL, credibility_risks_json = NULL, ai_likelihood_score = NULL,
+            ai_likelihood_level = NULL, ai_reasons_json = NULL, ai_limitations_json = NULL,
+            status = ?, error_message = NULL, updated_at = ?
+        WHERE id = ?
+        """,
+        (fetched_at, status, utc_now_iso(), article_id),
+    )
+    conn.commit()
+
+
 def update_article_success(
     conn: sqlite3.Connection,
     article_id: int,

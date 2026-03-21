@@ -38,3 +38,5 @@
 - 如果用户明确要求“只输出发现的问题”，就不要在 findings 后再追加正向摘要、happy path 结果或补充事实块
 - 普通仓库任务默认不要读取 `~/.openclaw` 下的 sessions/logs/agents 目录来补上下文
 - `memory_search`、`sessions_list`、`sessions_history` 仅用于显式日志/历史排查
+- 若 Telegram 消息主体只是文章 URL 或“帮我收录 / 立即分析 / 晚上统一发给我”这类收录指令，优先执行 `/home/fzhlian/Code/codex-dev/skills/article-digest/scripts/ingest_message.py`
+- 对这类文章收录消息，不要先写 `link.txt` 等临时文件，也不要输出伪造的函数标签；要么真正执行脚本，要么明确说明阻塞原因

@@ -10,27 +10,54 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from app.config import load_config
-from app.db import connect_db, init_db
+from app.db import connect_db, init_db, mark_article_status
+from app.pipeline import ingest_url
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Reset failed article records back to queued.")
+    parser = argparse.ArgumentParser(description="Retry failed article records.")
     parser.add_argument("--env-file", help="Optional .env path")
     parser.add_argument(
         "--statuses",
         nargs="*",
         default=["send_failed", "analysis_failed", "extract_failed"],
-        help="Statuses to reset back to queued.",
+        help="Statuses to retry.",
     )
     args = parser.parse_args()
     config = load_config(args.env_file)
     conn = connect_db(config.db_path)
     init_db(conn)
     placeholders = ",".join("?" for _ in args.statuses)
-    sql = f"UPDATE articles SET status = 'queued', error_message = NULL WHERE status IN ({placeholders})"
-    cursor = conn.execute(sql, args.statuses)
-    conn.commit()
-    print(json.dumps({"reset_count": cursor.rowcount, "statuses": args.statuses}, ensure_ascii=False, indent=2))
+    rows = conn.execute(
+        f"SELECT id, url, status FROM articles WHERE status IN ({placeholders}) ORDER BY id ASC",
+        args.statuses,
+    ).fetchall()
+    requeued = 0
+    reprocessed = 0
+    results = []
+    for row in rows:
+        status = str(row["status"])
+        if status == "send_failed":
+            mark_article_status(conn, int(row["id"]), "queued", error_message=None)
+            requeued += 1
+            results.append({"id": int(row["id"]), "url": row["url"], "status": "queued"})
+            continue
+        result = ingest_url(str(row["url"]), conn=conn, env_file=args.env_file)
+        reprocessed += 1
+        results.append({"id": int(row["id"]), "url": row["url"], "status": result.get("status")})
+    print(
+        json.dumps(
+            {
+                "retried_count": len(rows),
+                "requeued_count": requeued,
+                "reprocessed_count": reprocessed,
+                "statuses": args.statuses,
+                "results": results,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 0
 
 

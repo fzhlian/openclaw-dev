@@ -17,11 +17,12 @@ description: 从 Telegram 接收文章链接，抓取正文，生成摘要、主
 - “立即分析这篇”
 
 如果消息中没有可识别 URL，返回简短错误说明，不做长回复。
+如果 Telegram 消息主体只是一个或多个 URL，也应直接触发本 skill，不要先把链接写入临时文件或输出伪造工具标签。
 
 ## 行为规则
 
 1. 先提取消息中的 URL。
-2. 对每个 URL 调用 `scripts/ingest_url.py`。
+2. 优先直接执行 `scripts/ingest_message.py "<原始消息>"`；只在明确单 URL 且需要立即查看时执行 `scripts/ingest_url.py <url> --immediate`。
 3. 默认行为是入队，简短回复“已加入待发送列表”。
 4. 如果用户明确要求“现在分析 / 立即分析”，允许回单篇分析结果。
 5. 抽取失败时仍保留最小记录，并标记 `extract_failed`。
@@ -34,9 +35,9 @@ description: 从 Telegram 接收文章链接，抓取正文，生成摘要、主
 
 ## 运行入口
 
-- 入库：`python3 skills/article-digest/scripts/ingest_url.py <url>`
-- 消息级入库：`python3 skills/article-digest/scripts/ingest_message.py "<telegram text>"`
-- 单篇立即分析：`python3 skills/article-digest/scripts/ingest_url.py <url> --immediate`
+- 入库：`skills/article-digest/scripts/ingest_url.py <url>`
+- 消息级入库：`skills/article-digest/scripts/ingest_message.py "<telegram text>"`
+- 单篇立即分析：`skills/article-digest/scripts/ingest_url.py <url> --immediate`
 - 初始化数据库：`python3 skills/article-digest/scripts/init_db.py`
 - 定时发送：`python3 skills/article-digest/scripts/send_digest.py`
 - 生成或安装 cron：`python3 skills/article-digest/scripts/install_cron.py [--apply]`
