@@ -13,6 +13,8 @@ def validate_article_payload(payload: dict[str, object]) -> None:
         "author",
         "published_at",
         "language",
+        "is_favorite",
+        "favorited_at",
         "summary",
         "main_threads",
         "credibility",
@@ -41,4 +43,8 @@ def validate_article_payload(payload: dict[str, object]) -> None:
     main_threads = payload["main_threads"]
     if not isinstance(main_threads, list) or not all(isinstance(item, str) for item in main_threads):
         raise SchemaValidationError("main_threads 必须是字符串数组")
-
+    if not isinstance(payload["is_favorite"], bool):
+        raise SchemaValidationError("is_favorite 必须是布尔值")
+    favorited_at = payload["favorited_at"]
+    if favorited_at is not None and not isinstance(favorited_at, str):
+        raise SchemaValidationError("favorited_at 必须是字符串或 null")

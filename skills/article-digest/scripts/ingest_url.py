@@ -15,14 +15,15 @@ from app.pipeline import ingest_url
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Ingest one article URL into the digest queue.")
-    parser.add_argument("url", help="Article URL")
-    parser.add_argument("--immediate", action="store_true", help="Return the single-article analysis instead of queue acknowledgement.")
-    parser.add_argument("--env-file", help="Optional .env path")
+    parser = argparse.ArgumentParser(description="抓取单篇文章链接，完成分析，并按配置直接推送或入队。")
+    parser.add_argument("url", help="文章链接")
+    parser.add_argument("--immediate", action="store_true", help="额外返回单篇完整研判文本")
+    parser.add_argument("--仅入队", action="store_true", help="只写入队列，不立即推送 Telegram")
+    parser.add_argument("--env-file", help="可选的 .env 文件路径")
     args = parser.parse_args()
-    result = ingest_url(args.url, immediate=args.immediate, env_file=args.env_file)
+    result = ingest_url(args.url, immediate=args.immediate, 仅入队=args.仅入队, env_file=args.env_file)
     print(json.dumps(result, ensure_ascii=False, indent=2))
-    return 0 if result.get("status") in {"queued", "duplicate"} or args.immediate else 1
+    return 0 if result.get("status") in {"queued", "duplicate", "sent"} or args.immediate else 1
 
 
 if __name__ == "__main__":

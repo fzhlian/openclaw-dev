@@ -28,8 +28,8 @@ def test_only_queued_articles_are_sent_and_marked_sent(tmp_path):
     )
     conn = connect_db(tmp_path / "article_digest.db")
     init_db(conn)
-    ingest_url("https://example.com/a", conn=conn, fetcher=lambda _: HTML, env_file=env_file)
-    ingest_url("https://example.com/b", conn=conn, fetcher=lambda _: HTML, env_file=env_file)
+    ingest_url("https://example.com/a", conn=conn, fetcher=lambda _: HTML, env_file=env_file, 仅入队=True)
+    ingest_url("https://example.com/b", conn=conn, fetcher=lambda _: HTML, env_file=env_file, 仅入队=True)
     latest_id = conn.execute("SELECT id FROM articles ORDER BY id DESC LIMIT 1").fetchone()[0]
     conn.execute("UPDATE articles SET status = 'sent' WHERE id = ?", (latest_id,))
     conn.commit()

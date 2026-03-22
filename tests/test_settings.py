@@ -50,7 +50,7 @@ def test_settings_fallback_applies_when_env_missing(tmp_path):
             "max_digest_items": "3",
         },
     )
-    ingest_url("https://example.com/settings-fallback", env_file=env_file, conn=conn, fetcher=lambda _: HTML)
+    ingest_url("https://example.com/settings-fallback", env_file=env_file, conn=conn, fetcher=lambda _: HTML, 仅入队=True)
     sent_messages = []
 
     def fake_telegram_sender(token, chat_id, text, thread_id=None):

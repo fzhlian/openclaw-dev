@@ -57,6 +57,7 @@ class ExtractedArticle:
     fetched_at: str
     raw_html_path: str | None = None
     extracted_text_path: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -71,6 +72,7 @@ class ExtractedArticle:
             "fetched_at": self.fetched_at,
             "raw_html_path": self.raw_html_path,
             "extracted_text_path": self.extracted_text_path,
+            "metadata": self.metadata,
         }
 
 
@@ -82,6 +84,8 @@ def build_article_payload(
     credibility: CredibilityResult | dict[str, Any],
     ai_likelihood: AILikelihoodResult | dict[str, Any],
     status: str,
+    is_favorite: bool = False,
+    favorited_at: str | None = None,
 ) -> dict[str, Any]:
     article_data = article.to_dict() if isinstance(article, ExtractedArticle) else dict(article)
     credibility_data = credibility.to_dict() if isinstance(credibility, CredibilityResult) else dict(credibility)
@@ -93,10 +97,11 @@ def build_article_payload(
         "author": article_data.get("author"),
         "published_at": article_data.get("published_at"),
         "language": article_data.get("language") or "unknown",
+        "is_favorite": is_favorite,
+        "favorited_at": favorited_at,
         "summary": summary,
         "main_threads": list(main_threads),
         "credibility": credibility_data,
         "ai_likelihood": ai_data,
         "status": status,
     }
-

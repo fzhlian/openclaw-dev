@@ -31,7 +31,7 @@ def test_send_fallback_to_telegram(tmp_path, monkeypatch):
     )
     conn = connect_db(tmp_path / "article_digest.db")
     init_db(conn)
-    ingest_url("https://example.com/fallback", conn=conn, fetcher=lambda _: HTML, env_file=env_file)
+    ingest_url("https://example.com/fallback", conn=conn, fetcher=lambda _: HTML, env_file=env_file, 仅入队=True)
 
     def failing_runner(*args, **kwargs):
         raise subprocess.CalledProcessError(returncode=1, cmd=kwargs.get("args") or args[0])
@@ -46,4 +46,3 @@ def test_send_fallback_to_telegram(tmp_path, monkeypatch):
     assert result["status"] == "sent"
     assert result["delivery_method"] == "openclaw_message+telegram_bot_fallback"
     assert sent_payloads
-

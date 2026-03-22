@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import re
+from html import unescape as stdlib_unescape
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Iterable
@@ -12,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 
 URL_PATTERN = re.compile(r"https?://[^\s<>()]+", re.IGNORECASE)
-SENTENCE_SPLIT_PATTERN = re.compile(r"(?<=[。！？!?\.])\s+")
+SENTENCE_SPLIT_PATTERN = re.compile(r"(?<=[。！？!?；;])\s*|(?<=\.)\s+")
 TAG_RE = re.compile(r"<[^>]+>")
 SCRIPT_STYLE_RE = re.compile(r"<(script|style|noscript)[^>]*>.*?</\1>", re.IGNORECASE | re.DOTALL)
 COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
@@ -106,17 +107,7 @@ def strip_html(value: str) -> str:
 
 
 def html_unescape(value: str) -> str:
-    replacements = {
-        "&nbsp;": " ",
-        "&amp;": "&",
-        "&lt;": "<",
-        "&gt;": ">",
-        "&quot;": '"',
-        "&#39;": "'",
-    }
-    for old, new in replacements.items():
-        value = value.replace(old, new)
-    return value
+    return stdlib_unescape(value).replace("\xa0", " ")
 
 
 def clean_text(value: str) -> str:
@@ -138,8 +129,19 @@ def sentence_split(text: str) -> list[str]:
     normalized = clean_text(text)
     if not normalized:
         return []
+    normalized = normalized.replace("\n", " ")
     parts = SENTENCE_SPLIT_PATTERN.split(normalized)
-    return [part.strip() for part in parts if part.strip()]
+    sentences = [part.strip() for part in parts if part and part.strip()]
+    if not sentences:
+        return []
+
+    merged: list[str] = []
+    for sentence in sentences:
+        if merged and sentence.startswith(("”", "’", '"', "」", "』", "》", "】")):
+            merged[-1] = f"{merged[-1]}{sentence}"
+            continue
+        merged.append(sentence)
+    return merged
 
 
 def truncate(text: str, max_chars: int) -> str:
@@ -181,4 +183,3 @@ def coalesce_env(environ: dict[str, str], file_values: dict[str, str]) -> dict[s
 def load_env(root: Path, env_path: Path | None = None) -> dict[str, str]:
     target = env_path or root / ".env"
     return coalesce_env(os.environ, parse_env_file(target))
-

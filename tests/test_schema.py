@@ -19,8 +19,22 @@ def test_output_matches_schema_shape(tmp_path):
     init_db(conn)
     result = ingest_url("https://example.com/schema", conn=conn, fetcher=lambda _: HTML)
     article = result["article"]
-    assert {"url", "title", "source", "author", "published_at", "language", "summary", "main_threads", "credibility", "ai_likelihood", "status"} <= set(article)
+    assert {
+        "url",
+        "title",
+        "source",
+        "author",
+        "published_at",
+        "language",
+        "is_favorite",
+        "favorited_at",
+        "summary",
+        "main_threads",
+        "credibility",
+        "ai_likelihood",
+        "status",
+    } <= set(article)
     assert {"score", "level", "reasons", "risks", "disclaimer"} <= set(article["credibility"])
     assert {"score", "level", "reasons", "limitations", "disclaimer"} <= set(article["ai_likelihood"])
     assert isinstance(article["main_threads"], list)
-
+    assert article["is_favorite"] is False

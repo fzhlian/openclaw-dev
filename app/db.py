@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS articles (
     fetched_at TEXT NOT NULL,
     raw_html_path TEXT,
     extracted_text_path TEXT,
+    is_favorite INTEGER NOT NULL DEFAULT 0,
+    favorited_at TEXT,
     summary TEXT,
     main_threads_json TEXT,
     credibility_score INTEGER,
@@ -37,6 +39,11 @@ CREATE TABLE IF NOT EXISTS articles (
     updated_at TEXT NOT NULL
 );
 """
+ARTICLE_OPTIONAL_COLUMNS = {
+    "is_favorite": "INTEGER NOT NULL DEFAULT 0",
+    "favorited_at": "TEXT",
+}
+READY_ARTICLE_STATUSES = ("queued", "sending", "sent", "send_failed", "duplicate")
 
 DELIVERY_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS deliveries (
@@ -75,7 +82,25 @@ def init_db(conn: sqlite3.Connection) -> None:
     conn.execute(ARTICLE_TABLE_SQL)
     conn.execute(DELIVERY_TABLE_SQL)
     conn.execute(SETTINGS_TABLE_SQL)
+    _ensure_table_columns(conn, "articles", ARTICLE_OPTIONAL_COLUMNS)
     conn.commit()
+
+
+def _existing_columns(conn: sqlite3.Connection, table_name: str) -> set[str]:
+    rows = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+    return {str(row[1]) for row in rows}
+
+
+def _ensure_table_columns(
+    conn: sqlite3.Connection,
+    table_name: str,
+    column_defs: dict[str, str],
+) -> None:
+    existing = _existing_columns(conn, table_name)
+    for column_name, column_def in column_defs.items():
+        if column_name in existing:
+            continue
+        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_def}")
 
 
 def get_settings(conn: sqlite3.Connection) -> dict[str, str]:
@@ -120,6 +145,51 @@ def get_article_by_hash(conn: sqlite3.Connection, article_hash: str) -> sqlite3.
 
 def get_article_by_id(conn: sqlite3.Connection, article_id: int) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM articles WHERE id = ?", (article_id,)).fetchone()
+
+
+def get_latest_article(conn: sqlite3.Connection, *, only_favorite: bool = False) -> sqlite3.Row | None:
+    if only_favorite:
+        return conn.execute(
+            """
+            SELECT * FROM articles
+            WHERE is_favorite = 1
+            ORDER BY COALESCE(favorited_at, updated_at, created_at) DESC, id DESC
+            LIMIT 1
+            """
+        ).fetchone()
+    return conn.execute(
+        """
+        SELECT * FROM articles
+        ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+        LIMIT 1
+        """
+    ).fetchone()
+
+
+def get_latest_ready_article(conn: sqlite3.Connection, *, only_favorite: bool = False) -> sqlite3.Row | None:
+    placeholders = ", ".join("?" for _ in READY_ARTICLE_STATUSES)
+    if only_favorite:
+        return conn.execute(
+            f"""
+            SELECT * FROM articles
+            WHERE is_favorite = 1
+              AND status IN ({placeholders})
+              AND summary IS NOT NULL
+            ORDER BY COALESCE(favorited_at, updated_at, created_at) DESC, id DESC
+            LIMIT 1
+            """,
+            READY_ARTICLE_STATUSES,
+        ).fetchone()
+    return conn.execute(
+        f"""
+        SELECT * FROM articles
+        WHERE status IN ({placeholders})
+          AND summary IS NOT NULL
+        ORDER BY COALESCE(updated_at, created_at) DESC, id DESC
+        LIMIT 1
+        """,
+        READY_ARTICLE_STATUSES,
+    ).fetchone()
 
 
 def create_article_stub(
@@ -255,6 +325,41 @@ def update_articles_status(conn: sqlite3.Connection, article_ids: Iterable[int],
     conn.commit()
 
 
+def set_article_favorite(
+    conn: sqlite3.Connection,
+    article_id: int,
+    *,
+    is_favorite: bool,
+) -> None:
+    favorited_at = utc_now_iso() if is_favorite else None
+    conn.execute(
+        """
+        UPDATE articles
+        SET is_favorite = ?, favorited_at = ?, updated_at = ?
+        WHERE id = ?
+        """,
+        (1 if is_favorite else 0, favorited_at, utc_now_iso(), article_id),
+    )
+    conn.commit()
+
+
+def list_favorite_articles(
+    conn: sqlite3.Connection,
+    *,
+    limit: int | None = 20,
+) -> list[sqlite3.Row]:
+    sql = """
+        SELECT * FROM articles
+        WHERE is_favorite = 1
+        ORDER BY COALESCE(favorited_at, updated_at, created_at) DESC, id DESC
+    """
+    params: list[Any] = []
+    if limit is not None:
+        sql += " LIMIT ?"
+        params.append(limit)
+    return list(conn.execute(sql, params).fetchall())
+
+
 def record_delivery(
     conn: sqlite3.Connection,
     *,
@@ -307,6 +412,8 @@ def article_row_to_payload(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
         "author": source.get("author"),
         "published_at": source.get("published_at"),
         "language": source.get("language") or "unknown",
+        "is_favorite": bool(source.get("is_favorite")),
+        "favorited_at": source.get("favorited_at"),
         "summary": source.get("summary") or "",
         "main_threads": load_json_if_present(source.get("main_threads_json")) or [],
         "credibility": {

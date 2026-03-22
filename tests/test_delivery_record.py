@@ -28,7 +28,7 @@ def test_delivery_record_is_written(tmp_path):
     )
     conn = connect_db(tmp_path / "article_digest.db")
     init_db(conn)
-    ingest_url("https://example.com/delivery", conn=conn, fetcher=lambda _: HTML, env_file=env_file)
+    ingest_url("https://example.com/delivery", conn=conn, fetcher=lambda _: HTML, env_file=env_file, 仅入队=True)
 
     def fake_telegram_sender(token, chat_id, text, thread_id=None):
         return {"ok": True, "result": {"message_id": 77}}
